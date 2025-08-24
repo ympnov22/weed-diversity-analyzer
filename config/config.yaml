@@ -41,27 +41,46 @@ preprocessing:
 
 models:
   primary:
-    name: "weednet"
-    model_path: "data/models/weednet.pth"
-    confidence_threshold: 0.5
+    name: "inatag"
+    size: "base"
+    model_path: "data/models/inatag"
+    confidence_threshold: 0.7
     top_k: 3
+    use_lora: false
+    lora_path: null
+    device: "auto"
+    batch_size: 32
     
   fallback:
-    - name: "inatag"
-      model_path: "data/models/inatag.pth"
-      confidence_threshold: 0.4
-    - name: "agrinet"
-      model_path: "data/models/agrinet.pth"
-      confidence_threshold: 0.4
-    - name: "deepweeds"
-      model_path: "data/models/deepweeds.pth"
-      confidence_threshold: 0.3
+    - name: "inatag_tiny"
+      size: "tiny"
+      model_path: "data/models/inatag"
+      confidence_threshold: 0.5
+      top_k: 3
+      use_lora: false
+      device: "auto"
+      batch_size: 32
+      
+  lora_config:
+    rank: 16
+    alpha: 32
+    dropout: 0.1
+    target_modules: ["qkv", "proj"]
+    learning_rate: 1e-4
+    epochs: 10
+    batch_size: 16
+    
+  species_config:
+    total_species: 2959
+    species_file: "data/models/inatag_species_list.txt"
+    taxonomy_levels: ["species", "genus", "family"]
+    confidence_rollup_threshold: 0.3
   
   inference:
     batch_size: 16
-    device: "auto"  # Options: auto, cpu, cuda
+    device: "auto"
     num_workers: 4
-    use_amp: true  # Automatic Mixed Precision
+    use_amp: true
 
 classification:
   confidence_thresholds:

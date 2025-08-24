@@ -157,5 +157,5 @@ notebooks/.ipynb_checkpoints/
 # Model weights and large files
 *.weights
 *.bin
-models/
+data/models/
 checkpoints/
