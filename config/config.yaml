@@ -142,6 +142,21 @@ output:
     calendar_format: "github_grass"
     time_series_format: "plotly_json"
     include_interactive: true
+    web_server:
+      host: "127.0.0.1"
+      port: 8000
+      debug: false
+    calendar:
+      cell_size: 12
+      cell_spacing: 2
+      color_scheme: "green"
+      intensity_levels: 5
+      tooltip_enabled: true
+      responsive: true
+    dashboard:
+      species_chart_top_k: 20
+      performance_metrics: ["processing_time", "accuracy", "memory_usage"]
+      soft_voting_analysis: true
 
 processing:
   max_workers: 4
