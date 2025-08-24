@@ -2,10 +2,10 @@
 
 from .json_exporter import JSONExporter
 from .csv_exporter import CSVExporter
-from .visualization_data import VisualizationDataGenerator
+from .output_manager import OutputManager
 
 __all__ = [
     "JSONExporter",
     "CSVExporter",
-    "VisualizationDataGenerator",
+    "OutputManager",
 ]
