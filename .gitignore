@@ -132,7 +132,6 @@ dmypy.json
 data/raw/
 data/processed/
 data/models/
-output/
 logs/
 temp/
 *.pth
