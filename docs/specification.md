@@ -1,55 +1,98 @@
-# 自然農法畑植生多様性解析ツール 仕様書
+# 自然農法畑植生多様性解析ツール（iNatAg版） 仕様書
 
 ## 1. プロジェクト概要
 
 ### 1.1 目的
-自然農法の畑の植生を撮影した画像から、雑草の種類と多様性を判定し、日ごとに時系列で可視化するツールを開発する。
+自然農法の畑の植生を撮影した画像から、雑草の種類と多様性を判定し、日ごとに時系列で可視化するツールを開発する。iNatAgデータセット（2,959種、470万画像）をベースとしたSwin Transformer + LoRA微調整により、北海道の畑画像に特化した高精度な植生解析を実現する。
 
 ### 1.2 目標
-- 高精度な雑草種識別（WeedNet等の最新モデル活用）
-- 生物多様性指標の正確な算出
-- 撮影条件の違いに対する頑健性
-- 拡張性を考慮したモジュール設計
+- **高精度な雑草種識別**: iNatAg（2,959種対応）による大規模種分類
+- **北海道適応**: Swin Transformer + LoRA微調整による地域特化
+- **生物多様性指標の正確な算出**: Shannon多様度、Hill数等の高精度計算
+- **撮影条件の違いに対する頑健性**: 天候・時間帯変動への対応
+- **拡張性を考慮したモジュール設計**: 他地域・他作物への展開可能性
 
 ### 1.3 対象ユーザー
-- 自然農法実践者（一次利用者）
-- 農業研究者（将来的な拡張対象）
+- **自然農法実践者**（一次利用者）: 畑記録ツールとして利用
+- **農業研究者**（将来的な拡張対象）: 比較研究・学術利用
+
+### 1.4 技術的優位性
+- **大規模データセット**: 470万画像、2,959種（従来比1.86倍の種カバレッジ）
+- **最新アーキテクチャ**: Swin Transformer による高精度画像認識
+- **効率的適応**: LoRA微調整による軽量な地域適応学習
+- **学術的裏付け**: arXiv論文による技術的信頼性
 
 ## 2. 機能要件
 
 ### 2.1 入力仕様
 - **データ形式**: JPEG画像ファイル
 - **ディレクトリ構造**: `data/YYYY-MM-DD/*.jpg`
-- **画像サイズ**: 任意（前処理で正規化）
+- **画像サイズ**: 224x224以上（Swin Transformer最適化）
 - **撮影条件**: 屋外自然光、様々な天候・時間帯
+- **対象地域**: 北海道の自然農法畑（LoRA適応対象）
 
 ### 2.2 前処理機能
 
 #### 2.2.1 画像補正
 - **明度補正**: ヒストグラム均等化、CLAHE適用
-- **色温度補正**: ホワイトバランス調整
+- **色温度補正**: ホワイトバランス調整（Gray World/White Patch）
 - **露出補正**: ガンマ補正による明暗調整
+- **Swin対応**: 224x224リサイズ、パッチ分割最適化
 
 #### 2.2.2 冗長性削減
 - **類似度計算**: 構造的類似性指数（SSIM）、特徴量ベース類似度
-- **クラスタリング**: K-means、階層クラスタリング
-- **代表画像選択**: クラスタ中心に最も近い画像を選択
+- **クラスタリング**: 階層クラスタリング（Ward法）
+- **代表画像選択**: 品質スコア最高の画像を選択
+
+#### 2.2.3 品質評価
+- **ブラー検出**: Laplacian分散による鮮明度評価
+- **露出評価**: ヒストグラム解析による適正露出判定
+- **Swin適合性**: パッチ分割品質の事前評価
 
 ### 2.3 推論機能
 
-#### 2.3.1 第一候補: WeedNet
-- **モデル**: WeedNet (2025年版、1,593種対応)
-- **出力**: Top-k推定（k=3）
-- **信頼度**: ソフトマックス確率値
+#### 2.3.1 主要モデル: iNatAg Swin Transformer
+- **データセット**: iNatAg（470万画像、2,959種）
+- **アーキテクチャ**: Swin Transformer（Tiny/Base/Large）
+- **アクセス方法**: Hugging Face Hub (Project-AgML/iNatAg-models)
+- **出力**: Top-k推定（k=3）+ 確信度
+- **入力サイズ**: 224x224 RGB
 
-#### 2.3.2 フォールバックモデル
-- **候補**: iNatAg, AgriNet, DeepWeeds
-- **転移学習**: LoRA（Low-Rank Adaptation）
-- **ファインチューニング**: 軽微な追加学習
+#### 2.3.2 LoRA微調整仕様
+- **対象レイヤー**: Attention層、MLP層
+- **LoRAランク**: r=16（デフォルト）
+- **学習率**: 1e-4
+- **北海道適応**: 畑画像での追加学習
+- **微調整方法**: 最終層 + LoRAアダプター
 
-#### 2.3.3 推論後処理
+#### 2.3.3 モデルバリエーション
+```python
+AVAILABLE_MODELS = {
+    "swin_tiny_with_lora": {
+        "size": "117MB",
+        "speed": "高速",
+        "accuracy": "標準",
+        "recommended_for": "リアルタイム処理"
+    },
+    "swin_base_with_lora": {
+        "size": "374MB", 
+        "speed": "中速",
+        "accuracy": "高精度",
+        "recommended_for": "バランス重視"
+    },
+    "swin_large_with_lora": {
+        "size": "946MB",
+        "speed": "低速",
+        "accuracy": "最高精度",
+        "recommended_for": "精度最優先"
+    }
+}
+```
+
+#### 2.3.4 推論後処理
 - **信頼度フィルタリング**: 閾値以下は上位分類群にロールアップ
-- **ソフト投票**: Top-3結果の重み付き平均
+- **Top-3ソフト投票**: 重み付き平均による多様性計算
+- **北海道特化補正**: 地域適応モデルによる予測調整
 
 ### 2.4 多様性評価機能
 
@@ -57,6 +100,7 @@
 - **種リッチネス (R)**: ユニーク種数
 - **Shannon多様度 (H')**: -Σ(pi × ln(pi))
 - **Pielou均等度 (J)**: H' / ln(R)
+- **Simpson多様度 (D)**: 1 - Σ(pi²)
 - **Hill数**: q=0,1,2での多様度
 
 #### 2.4.2 高度な指標
@@ -65,8 +109,9 @@
 - **信頼区間**: ブートストラップ法による区間推定
 
 #### 2.4.3 撮影枚数補正
-- **サブサンプリング**: 固定枚数mでの反復平均
+- **サブサンプリング**: 固定枚数m（30枚）での反復平均
 - **レアファクション**: 種蓄積曲線による補正
+- **Top-3ソフト投票**: 確信度重み付きによる多様性計算
 
 ### 2.5 出力機能
 
@@ -92,35 +137,49 @@
     {"name": "Plantago major", "abundance": 0.18, "confidence": 0.92}
   ],
   "total_images": 45,
-  "processed_images": 38
+  "processed_images": 38,
+  "processing_metadata": {
+    "model_used": "inatag_swin_base_lora",
+    "hokkaido_adapted": true,
+    "processing_time": 127.3,
+    "soft_voting_applied": true
+  }
 }
 ```
 
 #### 2.5.2 詳細データ (CSV)
 ```csv
-date,image_path,species_1,confidence_1,species_2,confidence_2,species_3,confidence_3
-2025-08-24,data/2025-08-24/IMG_001.jpg,Taraxacum officinale,0.89,Plantago major,0.08,Trifolium repens,0.03
+date,image_path,species_1,confidence_1,species_2,confidence_2,species_3,confidence_3,model_version,hokkaido_adapted
+2025-08-24,data/2025-08-24/IMG_001.jpg,Taraxacum officinale,0.89,Plantago major,0.08,Trifolium repens,0.03,inatag_swin_base_lora,true
 ```
 
 #### 2.5.3 可視化データ
-- GitHub草風カレンダー用JSON
-- 時系列グラフ用データ
+- **GitHub草風カレンダー用JSON**: 日次多様性スコア
+- **時系列グラフ用データ**: 種リッチネス・Shannon多様度推移
 
 ## 3. 非機能要件
 
 ### 3.1 性能要件
-- **処理速度**: 1画像あたり5秒以内
-- **メモリ使用量**: 8GB以内
-- **バッチ処理**: 100画像/日の処理能力
+- **処理速度**: 
+  - Tiny: 1秒/画像以下
+  - Base: 2秒/画像以下
+  - Large: 3秒/画像以下
+- **メモリ使用量**: 
+  - Tiny: 2GB以下
+  - Base: 4GB以下
+  - Large: 8GB以下
+- **バッチ処理**: 100画像/日で10分以内
 
 ### 3.2 精度要件
-- **種識別精度**: Top-1で70%以上、Top-3で85%以上
-- **多様性指標精度**: 手動カウントとの相関係数0.8以上
+- **種識別精度**: Top-1で75%以上、Top-3で90%以上（iNatAg大規模データ効果）
+- **多様性指標精度**: 手動カウントとの相関係数0.85以上
+- **北海道適応効果**: LoRA微調整により地域精度10%向上
 
 ### 3.3 拡張性要件
 - **モジュール設計**: 各機能を独立したモジュールとして実装
 - **設定ファイル**: YAML形式での設定管理
-- **プラグイン対応**: 新しいモデルの容易な追加
+- **LoRA対応**: 他地域への適応学習容易性
+- **モデル切り替え**: Tiny/Base/Large間の動的切り替え
 
 ## 4. システム構成
 
@@ -128,56 +187,74 @@ date,image_path,species_1,confidence_1,species_2,confidence_2,species_3,confiden
 ```
 Input Layer (画像データ)
     ↓
-Preprocessing Layer (前処理)
+Preprocessing Layer (前処理・品質評価)
     ↓
-Model Layer (推論)
+Model Layer (iNatAg Swin Transformer + LoRA)
     ↓
-Analysis Layer (多様性解析)
+Analysis Layer (多様性解析・統計補正)
     ↓
-Output Layer (結果出力)
+Output Layer (結果出力・可視化)
 ```
 
 ### 4.2 主要コンポーネント
-- **ImageProcessor**: 画像前処理
-- **SpeciesClassifier**: 種識別
-- **DiversityAnalyzer**: 多様性解析
-- **OutputGenerator**: 結果出力
-- **ConfigManager**: 設定管理
+- **ImageProcessor**: 画像前処理・品質評価
+- **iNatAgClassifier**: Swin Transformer種識別
+- **LoRAAdapter**: 北海道適応微調整
+- **DiversityAnalyzer**: 多様性解析・統計補正
+- **OutputGenerator**: 結果出力・可視化
+- **ConfigManager**: 設定管理・モデル選択
 
 ### 4.3 データフロー
-1. 画像読み込み → 前処理 → 品質チェック
-2. モデル推論 → 信頼度評価 → 結果統合
-3. 多様性計算 → 統計処理 → 補正適用
-4. 結果出力 → フォーマット変換 → ファイル保存
+1. **画像読み込み** → 前処理 → 品質チェック → Swin対応リサイズ
+2. **モデル推論** → LoRA適応 → Top-3予測 → 信頼度評価
+3. **多様性計算** → ソフト投票 → 統計処理 → 補正適用
+4. **結果出力** → JSON/CSV生成 → 可視化データ作成
 
 ## 5. 技術仕様
 
 ### 5.1 開発環境
 - **言語**: Python 3.12+
-- **深層学習**: PyTorch 2.0+
-- **画像処理**: OpenCV 4.8+
-- **数値計算**: NumPy, SciPy
+- **深層学習**: PyTorch 2.0+, Transformers 4.30+
+- **画像処理**: OpenCV 4.8+, Pillow 10.0+
+- **数値計算**: NumPy 1.24+, SciPy 1.11+
 - **データ処理**: Pandas 2.0+
+- **LoRA**: peft 0.4+, loralib 0.1+
 
 ### 5.2 外部依存
-- **WeedNet**: Hugging Face Hub経由
-- **代替モデル**: TensorFlow Hub, PyTorch Hub
-- **生態学ライブラリ**: scikit-bio, EcoSpold
+- **iNatAg Models**: Hugging Face Hub (Project-AgML/iNatAg-models)
+- **Swin Transformer**: timm 0.9+
+- **生態学ライブラリ**: scikit-bio 0.5+, EcoSpold 2.0+
 
 ### 5.3 設定管理
 ```yaml
 # config.yaml
+app:
+  name: "Weed Diversity Analyzer (iNatAg)"
+  version: "2.0.0"
+
 model:
-  primary: "weednet"
-  fallback: ["inatag", "agrinet"]
-  confidence_threshold: 0.5
+  primary: "inatag_swin_base_lora"
+  alternatives: ["inatag_swin_tiny_lora", "inatag_swin_large_lora"]
+  confidence_threshold: 0.7
+  hokkaido_adapted: true
+
+lora_config:
+  rank: 16
+  alpha: 32
+  dropout: 0.1
+  target_modules: ["query", "key", "value", "dense"]
+  learning_rate: 1e-4
 
 preprocessing:
-  image_size: [224, 224]
-  augmentation: true
-  similarity_threshold: 0.85
+  image_size: [224, 224]  # Swin Transformer最適化
+  similarity_threshold: 0.8
+  quality_thresholds:
+    min_blur_score: 100.0
+    min_brightness: 50
+    max_brightness: 200
 
 diversity:
+  soft_voting: true  # Top-3ソフト投票
   bootstrap_iterations: 1000
   coverage_target: 0.8
   subsample_size: 30
@@ -189,65 +266,96 @@ diversity:
 - **単体テスト**: 各モジュールの機能テスト
 - **統合テスト**: エンドツーエンドの処理テスト
 - **性能テスト**: 処理速度・メモリ使用量測定
+- **LoRAテスト**: 北海道適応効果の検証
+- **精度テスト**: iNatAg vs 専門家同定の比較
 
 ### 6.2 検証方法
 - **専門家による種同定結果との比較**
 - **既知多様性データセットでの検証**
+- **北海道畑画像での精度評価**
 - **クロスバリデーション**
 
 ## 7. 運用・保守
 
 ### 7.1 ログ管理
 - **処理ログ**: 各ステップの実行状況
+- **モデルログ**: 使用モデル・LoRA適応状況
 - **エラーログ**: 例外・警告の記録
 - **性能ログ**: 処理時間・リソース使用量
 
 ### 7.2 モニタリング
-- **精度監視**: 定期的な精度評価
+- **精度監視**: 定期的な精度評価・LoRA効果測定
 - **性能監視**: 処理時間の傾向分析
 - **データ品質**: 入力画像の品質チェック
+- **モデル監視**: Swin Transformer各サイズの性能比較
 
 ## 8. 将来拡張
 
 ### 8.1 機能拡張
-- **他農地との比較機能**
-- **季節変動解析**
-- **病害虫検出機能**
-- **土壌健康度推定**
+- **他地域適応**: 本州・九州向けLoRAアダプター
+- **季節変動解析**: 季節別多様性パターン分析
+- **病害虫検出機能**: マルチタスク学習による拡張
+- **土壌健康度推定**: 植生多様性からの推定
 
 ### 8.2 技術拡張
-- **リアルタイム処理**
-- **モバイルアプリ対応**
-- **クラウド展開**
-- **API提供**
+- **リアルタイム処理**: Swin Tiny活用
+- **モバイルアプリ対応**: 軽量モデル展開
+- **クラウド展開**: GPU最適化・分散処理
+- **API提供**: RESTful API・GraphQL対応
+
+### 8.3 LoRA拡張
+- **マルチタスク学習**: 病害検出・成長段階推定
+- **季節適応**: 季節別LoRAアダプター
+- **圃場特化**: 個別圃場への適応学習
+- **作物特化**: 作物種別LoRAアダプター
 
 ## 9. 制約事項
 
 ### 9.1 技術的制約
-- **GPU要件**: CUDA対応GPU推奨
-- **メモリ要件**: 最低8GB RAM
-- **ストレージ**: モデルファイル用に5GB以上
+- **GPU要件**: CUDA対応GPU推奨（Large使用時必須）
+- **メモリ要件**: 
+  - Tiny: 最低2GB RAM
+  - Base: 最低4GB RAM  
+  - Large: 最低8GB RAM
+- **ストレージ**: モデルファイル用に2GB以上
 
 ### 9.2 データ制約
-- **画像品質**: 最低解像度512x512
+- **画像品質**: 最低解像度224x224（Swin Transformer要件）
 - **撮影条件**: 極端な逆光・暗所は除外
-- **対象種**: 学習データに含まれる種のみ
+- **対象種**: iNatAg学習データに含まれる2,959種
+- **地域制約**: 北海道以外では精度低下の可能性
+
+### 9.3 LoRA制約
+- **適応データ**: 北海道畑画像が必要
+- **学習時間**: LoRA微調整に数時間必要
+- **メモリ**: 微調整時は追加メモリ必要
 
 ## 10. 成功基準
 
 ### 10.1 技術的成功基準
-- [ ] 種識別精度: Top-3で85%以上
-- [ ] 処理速度: 1画像5秒以内
-- [ ] 多様性指標の専門家評価との一致度80%以上
+- [ ] **種識別精度**: Top-3で90%以上（iNatAg大規模データ効果）
+- [ ] **処理速度**: Base使用時2秒/画像以内
+- [ ] **多様性指標精度**: 専門家評価との一致度85%以上
+- [ ] **北海道適応効果**: LoRA微調整により10%精度向上
+- [ ] **システム安定性**: 100画像連続処理でエラー率1%以下
 
 ### 10.2 ユーザー満足度
-- [ ] 使いやすいインターフェース
-- [ ] 安定した動作
-- [ ] 有用な洞察の提供
+- [ ] **使いやすいインターフェース**: 設定変更の容易性
+- [ ] **安定した動作**: 様々な撮影条件での頑健性
+- [ ] **有用な洞察の提供**: 多様性トレンドの可視化
+- [ ] **処理速度満足度**: 日次処理の実用的な速度
+
+### 10.3 拡張性達成度
+- [ ] **他地域展開可能性**: LoRAアダプター追加の容易性
+- [ ] **新機能追加**: モジュール設計による拡張性
+- [ ] **研究利用価値**: 学術研究での活用可能性
 
 ---
 
-**文書バージョン**: 1.0  
+**文書バージョン**: 2.0（iNatAg版）  
 **作成日**: 2025-08-24  
 **作成者**: Devin AI  
-**承認者**: ヤマシタ　ヤスヒロ
+**承認者**: ヤマシタ　ヤスヒロ  
+**ベースモデル**: iNatAg (Project-AgML/iNatAg-models)  
+**対応種数**: 2,959種  
+**データセット規模**: 470万画像
