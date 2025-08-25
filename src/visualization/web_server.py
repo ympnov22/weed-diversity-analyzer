@@ -1,17 +1,23 @@
 """FastAPI web server for visualization interface."""
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Depends, Request, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 import json
 import uvicorn
+import os
 from datetime import datetime
 
 from ..utils.logger import LoggerMixin
 from ..output.output_manager import OutputManager
+from ..database.database import get_db
+from ..database.services import DatabaseService
+from ..auth.dependencies import require_auth, optional_auth
+from ..database.models import UserModel
 from .calendar_visualizer import CalendarVisualizer
 from .time_series_visualizer import TimeSeriesVisualizer
 from .dashboard_generator import DashboardGenerator
@@ -37,6 +43,8 @@ class WebServer(LoggerMixin):
         self.host = host
         self.port = port
         
+        self._setup_cors()
+        
         self.calendar_viz = CalendarVisualizer()
         self.time_series_viz = TimeSeriesVisualizer()
         self.dashboard_gen = DashboardGenerator()
@@ -47,6 +55,25 @@ class WebServer(LoggerMixin):
         self._setup_routes()
         self._setup_static_files()
     
+    def _setup_cors(self):
+        """Setup CORS middleware for production."""
+        origins = ["*"]
+        
+        if os.getenv("PRODUCTION"):
+            origins = [
+                "https://weed-diversity-analyzer.fly.dev",
+                "http://localhost:8000",
+                "http://127.0.0.1:8000"
+            ]
+        
+        self.app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+    
     def _setup_routes(self):
         """Setup API routes for visualization data."""
         
@@ -56,71 +83,66 @@ class WebServer(LoggerMixin):
             return self._get_main_dashboard_html()
         
         @self.app.get("/api/calendar/{metric}")
-        async def get_calendar_data(metric: str):
+        async def get_calendar_data(
+            metric: str,
+            user: Optional[UserModel] = Depends(optional_auth),
+            db: Session = Depends(get_db)
+        ):
             """Get calendar data for specified metric."""
             try:
-                json_dir = self.output_manager.json_exporter.output_dir
-                calendar_file = json_dir / f"github_calendar_{metric}.json"
+                if user and hasattr(user, 'id'):
+                    db_service = DatabaseService(db)
+                    calendar_data = db_service.get_calendar_data(user.id, metric)
+                    
+                    if calendar_data["total_days"] > 0:
+                        return JSONResponse(calendar_data)
                 
-                if not calendar_file.exists():
-                    sample_data = self.calendar_viz.generate_sample_data()
-                    return JSONResponse(sample_data)
-                
-                with open(calendar_file, 'r', encoding='utf-8') as f:
-                    calendar_data = json.load(f)
-                
-                return JSONResponse(calendar_data)
+                sample_data = self.calendar_viz.generate_sample_data()
+                return JSONResponse(sample_data)
                 
             except Exception as e:
                 self.logger.error(f"Failed to get calendar data for {metric}: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/api/time-series")
-        async def get_time_series_data(start_date: Optional[str] = None, end_date: Optional[str] = None):
+        async def get_time_series_data(
+            start_date: Optional[str] = None,
+            end_date: Optional[str] = None,
+            user: Optional[UserModel] = Depends(optional_auth),
+            db: Session = Depends(get_db)
+        ):
             """Get time series data for specified date range."""
             try:
-                json_dir = self.output_manager.json_exporter.output_dir
+                if user and hasattr(user, 'id'):
+                    db_service = DatabaseService(db)
+                    time_series_data = db_service.get_time_series_data(user.id, start_date, end_date)
+                    
+                    if time_series_data["total_points"] > 0:
+                        return JSONResponse(time_series_data)
                 
-                if start_date and end_date:
-                    time_series_file = json_dir / f"time_series_{start_date}_to_{end_date}.json"
-                else:
-                    time_series_files = list(json_dir.glob("time_series_*.json"))
-                    if time_series_files:
-                        time_series_file = time_series_files[0]
-                    else:
-                        time_series_file = None
-                
-                if not time_series_file or not time_series_file.exists():
-                    sample_data = self.time_series_viz.generate_sample_time_series_data()
-                    return JSONResponse(sample_data)
-                
-                with open(time_series_file, 'r', encoding='utf-8') as f:
-                    time_series_data = json.load(f)
-                
-                return JSONResponse(time_series_data)
+                sample_data = self.time_series_viz.generate_sample_time_series_data()
+                return JSONResponse(sample_data)
                 
             except Exception as e:
                 self.logger.error(f"Failed to get time series data: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
         @self.app.get("/api/dashboard/species")
-        async def get_species_dashboard_data():
+        async def get_species_dashboard_data(
+            user: Optional[UserModel] = Depends(optional_auth),
+            db: Session = Depends(get_db)
+        ):
             """Get species distribution dashboard data."""
             try:
-                json_dir = self.output_manager.json_exporter.output_dir
-                daily_files = list(json_dir.glob("daily_summary_*.json"))
+                if user and hasattr(user, 'id'):
+                    db_service = DatabaseService(db)
+                    dashboard_data = db_service.get_species_dashboard_data(user.id)
+                    
+                    if dashboard_data["total_species"] > 0:
+                        return JSONResponse(dashboard_data)
                 
-                if not daily_files:
-                    sample_data = self.dashboard_gen.generate_sample_dashboard_data()
-                    return JSONResponse(sample_data["daily_summaries"])
-                
-                daily_summaries = []
-                for file_path in sorted(daily_files):
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        daily_data = json.load(f)
-                        daily_summaries.append(daily_data)
-                
-                return JSONResponse(daily_summaries)
+                sample_data = self.dashboard_gen.generate_sample_dashboard_data()
+                return JSONResponse(sample_data["daily_summaries"])
                 
             except Exception as e:
                 self.logger.error(f"Failed to get species dashboard data: {e}")
@@ -230,15 +252,22 @@ class WebServer(LoggerMixin):
                 return HTMLResponse("<h1>Error generating functional diversity analysis</h1>")
         
         @self.app.get("/api/status")
-        async def get_status():
+        async def get_status(db: Session = Depends(get_db)):
             """Get server status and data summary."""
             try:
                 output_summary = self.output_manager.get_output_summary()
+                
+                db_status = "connected"
+                try:
+                    db.execute("SELECT 1")
+                except Exception:
+                    db_status = "disconnected"
                 
                 status = {
                     "server": "running",
                     "timestamp": datetime.now().isoformat(),
                     "version": "1.0.0",
+                    "database_status": db_status,
                     "inatag_species_count": 2959,
                     "output_summary": output_summary
                 }
@@ -247,6 +276,40 @@ class WebServer(LoggerMixin):
                 
             except Exception as e:
                 self.logger.error(f"Failed to get status: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
+        
+        @self.app.post("/api/auth/create-user")
+        async def create_user(
+            username: str,
+            email: str,
+            db: Session = Depends(get_db)
+        ):
+            """Create a new user with API key."""
+            try:
+                from ..auth.auth import create_api_key
+                from ..database.models import UserModel
+                
+                api_key = create_api_key()
+                user = UserModel(
+                    username=username,
+                    email=email,
+                    api_key=api_key,
+                    is_active=True
+                )
+                
+                db.add(user)
+                db.commit()
+                db.refresh(user)
+                
+                return JSONResponse({
+                    "user_id": user.id,
+                    "username": user.username,
+                    "api_key": user.api_key,
+                    "message": "User created successfully"
+                })
+                
+            except Exception as e:
+                self.logger.error(f"Failed to create user: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
     
     def _generate_sample_daily_summaries(self) -> List[Dict[str, Any]]:
@@ -600,4 +663,81 @@ class WebServer(LoggerMixin):
         Returns:
             FastAPI application instance
         """
+        @self.app.get("/health")
+        async def health_check():
+            """Health check endpoint for deployment monitoring."""
+            try:
+                if os.getenv("DATABASE_URL"):
+                    try:
+                        with next(get_db()) as db:
+                            db.execute("SELECT 1")
+                    except Exception:
+                        pass
+                
+                return {
+                    "status": "healthy",
+                    "timestamp": datetime.now().isoformat(),
+                    "version": "1.0.0",
+                    "database": "connected" if os.getenv("DATABASE_URL") else "file-based"
+                }
+            except Exception as e:
+                self.logger.error(f"Health check failed: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Service unhealthy"
+                )
+
+        @self.app.get("/api/sessions")
+        async def get_user_sessions(
+            user: UserModel = Depends(require_auth),
+            db: Session = Depends(get_db)
+        ):
+            """Get analysis sessions for authenticated user."""
+            try:
+                db_service = DatabaseService(db)
+                sessions = db_service.get_user_sessions(user.id)
+                
+                return JSONResponse([{
+                    "id": session.id,
+                    "session_name": session.session_name,
+                    "description": session.description,
+                    "start_date": session.start_date.isoformat(),
+                    "end_date": session.end_date.isoformat() if session.end_date else None,
+                    "created_at": session.created_at.isoformat()
+                } for session in sessions])
+                
+            except Exception as e:
+                self.logger.error(f"Failed to get user sessions: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.post("/api/sessions")
+        async def create_analysis_session(
+            request: Request,
+            user: UserModel = Depends(require_auth),
+            db: Session = Depends(get_db)
+        ):
+            """Create new analysis session for authenticated user."""
+            try:
+                data = await request.json()
+                session_name = data.get("session_name")
+                description = data.get("description")
+                
+                if not session_name:
+                    raise HTTPException(status_code=400, detail="session_name is required")
+                
+                db_service = DatabaseService(db)
+                session = db_service.create_analysis_session(user.id, session_name, description)
+                
+                return JSONResponse({
+                    "id": session.id,
+                    "session_name": session.session_name,
+                    "description": session.description,
+                    "start_date": session.start_date.isoformat(),
+                    "created_at": session.created_at.isoformat()
+                }, status_code=201)
+                
+            except Exception as e:
+                self.logger.error(f"Failed to create analysis session: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
+
         return self.app

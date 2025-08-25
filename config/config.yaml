@@ -254,3 +254,22 @@ advanced_analysis:
       - "physiological"  # photosynthesis_type, nitrogen_fixation
       - "phenological"   # flowering_timing, duration
       - "ecological"     # dispersal_mode, root_depth
+
+database:
+  url: ${DATABASE_URL:-sqlite:///./weed_diversity.db}
+  echo: false
+  pool_size: 5
+  max_overflow: 10
+  pool_timeout: 30
+
+auth:
+  enabled: true
+  api_key_header: "Authorization"
+  require_auth_for_api: false  # Allow public access to visualization
+  require_auth_for_data_upload: true
+
+production:
+  cors_origins: ["https://weed-diversity-analyzer.fly.dev"]
+  allowed_hosts: ["weed-diversity-analyzer.fly.dev", "localhost"]
+  secure_cookies: true
+  log_level: "INFO"
