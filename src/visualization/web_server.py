@@ -195,6 +195,40 @@ class WebServer(LoggerMixin):
                 self.logger.error(f"Failed to generate performance dashboard: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
         
+        @self.app.get("/comparative-analysis", response_class=HTMLResponse)
+        async def comparative_analysis():
+            try:
+                from ..analysis.comparative_analysis import ComparativeAnalyzer
+                analyzer = ComparativeAnalyzer()
+                
+                sample_data = self._generate_sample_daily_summaries()
+                results = analyzer.compare_temporal_diversity(sample_data)
+                
+                dashboard_html = self.dashboard_gen.generate_comparative_analysis_dashboard(results)
+                return HTMLResponse(dashboard_html)
+            except Exception as e:
+                self.logger.error(f"Error generating comparative analysis: {e}")
+                return HTMLResponse("<h1>Error generating comparative analysis</h1>")
+        
+        @self.app.get("/functional-diversity", response_class=HTMLResponse)
+        async def functional_diversity():
+            try:
+                from ..analysis.functional_diversity import FunctionalDiversityAnalyzer
+                analyzer = FunctionalDiversityAnalyzer()
+                
+                species_list = ["Taraxacum officinale", "Plantago major", "Trifolium repens", "Poa annua"]
+                sample_traits = analyzer.generate_sample_trait_database(species_list)
+                analyzer.load_traits_from_dict(sample_traits)
+                
+                sample_abundances = {species: 10 - i*2 for i, species in enumerate(species_list)}
+                results = analyzer.calculate_functional_diversity(sample_abundances)
+                
+                dashboard_html = self.dashboard_gen.generate_functional_diversity_dashboard(results)
+                return HTMLResponse(dashboard_html)
+            except Exception as e:
+                self.logger.error(f"Error generating functional diversity analysis: {e}")
+                return HTMLResponse("<h1>Error generating functional diversity analysis</h1>")
+        
         @self.app.get("/api/status")
         async def get_status():
             """Get server status and data summary."""
@@ -214,6 +248,38 @@ class WebServer(LoggerMixin):
             except Exception as e:
                 self.logger.error(f"Failed to get status: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
+    
+    def _generate_sample_daily_summaries(self) -> List[Dict[str, Any]]:
+        """Generate sample daily summaries for testing."""
+        import random
+        from datetime import datetime, timedelta
+        
+        summaries = []
+        base_date = datetime(2025, 1, 1)
+        
+        for i in range(30):
+            date = base_date + timedelta(days=i)
+            summary = {
+                'date': date.strftime('%Y-%m-%d'),
+                'diversity_metrics': {
+                    'species_richness': random.randint(5, 15),
+                    'shannon_diversity': random.uniform(1.0, 3.0),
+                    'pielou_evenness': random.uniform(0.3, 0.9),
+                    'simpson_diversity': random.uniform(0.5, 0.9)
+                },
+                'species_counts': {
+                    f'Species_{j}': random.randint(1, 10) 
+                    for j in range(random.randint(5, 15))
+                },
+                'processing_info': {
+                    'total_images': random.randint(10, 50),
+                    'processed_images': random.randint(8, 45),
+                    'average_confidence': random.uniform(0.6, 0.9)
+                }
+            }
+            summaries.append(summary)
+        
+        return summaries
     
     def _setup_static_files(self):
         """Setup static file serving."""

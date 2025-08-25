@@ -427,6 +427,248 @@ class DashboardGenerator(LoggerMixin):
             self.logger.error(f"Failed to generate soft voting analysis: {e}")
             raise
     
+    def generate_comparative_analysis_dashboard(
+        self, 
+        comparative_results: Dict[str, Any], 
+        output_path: Path = None
+    ) -> str:
+        """Generate comparative analysis dashboard."""
+        if not comparative_results:
+            return self._generate_empty_dashboard()
+        
+        # Create temporal trends visualization
+        temporal_fig = self._create_temporal_trends_chart(comparative_results)
+        
+        beta_div_fig = self._create_beta_diversity_heatmap(comparative_results)
+        
+        correlation_fig = self._create_correlation_network(comparative_results)
+        
+        dashboard_html = self._combine_analysis_charts([
+            temporal_fig, beta_div_fig, correlation_fig
+        ], "比較分析ダッシュボード")
+        
+        if output_path:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(dashboard_html)
+        
+        return dashboard_html
+    
+    def generate_functional_diversity_dashboard(
+        self, 
+        functional_results: Dict[str, Any], 
+        output_path: Path = None
+    ) -> str:
+        """Generate functional diversity analysis dashboard."""
+        if not functional_results:
+            return self._generate_empty_dashboard()
+        
+        pca_fig = self._create_functional_space_plot(functional_results)
+        
+        indices_fig = self._create_functional_indices_chart(functional_results)
+        
+        groups_fig = self._create_functional_groups_plot(functional_results)
+        
+        dashboard_html = self._combine_analysis_charts([
+            pca_fig, indices_fig, groups_fig
+        ], "機能的多様性ダッシュボード")
+        
+        if output_path:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(dashboard_html)
+        
+        return dashboard_html
+    
+    def _create_temporal_trends_chart(self, results: Dict[str, Any]) -> go.Figure:
+        """Create temporal trends visualization."""
+        fig = go.Figure()
+        
+        if 'temporal_trends' in results:
+            trends = results['temporal_trends']
+            for metric, trend_data in trends.items():
+                if 'values' in trend_data and 'dates' in trend_data:
+                    fig.add_trace(go.Scatter(
+                        x=trend_data['dates'],
+                        y=trend_data['values'],
+                        mode='lines+markers',
+                        name=f'{metric}',
+                        line=dict(width=2)
+                    ))
+        
+        fig.update_layout(
+            title="時系列トレンド分析",
+            xaxis_title="日付",
+            yaxis_title="多様性指標値",
+            template="plotly_white",
+            height=400
+        )
+        
+        return fig
+    
+    def _create_beta_diversity_heatmap(self, results: Dict[str, Any]) -> go.Figure:
+        """Create beta diversity heatmap."""
+        fig = go.Figure()
+        
+        if 'beta_diversity' in results and 'distance_matrix' in results['beta_diversity']:
+            matrix = results['beta_diversity']['distance_matrix']
+            sites = results['beta_diversity'].get('site_names', [f'Site {i+1}' for i in range(len(matrix))])
+            
+            fig.add_trace(go.Heatmap(
+                z=matrix,
+                x=sites,
+                y=sites,
+                colorscale='Viridis',
+                colorbar=dict(title="ベータ多様性距離")
+            ))
+        
+        fig.update_layout(
+            title="ベータ多様性ヒートマップ",
+            template="plotly_white",
+            height=400
+        )
+        
+        return fig
+    
+    def _create_correlation_network(self, results: Dict[str, Any]) -> go.Figure:
+        """Create species correlation network."""
+        fig = go.Figure()
+        
+        if 'species_correlations' in results:
+            correlations = results['species_correlations']
+            if 'correlation_matrix' in correlations:
+                matrix = correlations['correlation_matrix']
+                species = correlations.get('species_names', [f'Species {i+1}' for i in range(len(matrix))])
+                
+                fig.add_trace(go.Heatmap(
+                    z=matrix,
+                    x=species,
+                    y=species,
+                    colorscale='RdBu',
+                    zmid=0,
+                    colorbar=dict(title="相関係数")
+                ))
+        
+        fig.update_layout(
+            title="種間相関ネットワーク",
+            template="plotly_white",
+            height=400
+        )
+        
+        return fig
+    
+    def _create_functional_space_plot(self, results: Dict[str, Any]) -> go.Figure:
+        """Create functional space PCA plot."""
+        fig = go.Figure()
+        
+        if 'pca_results' in results:
+            pca_data = results['pca_results']
+            if 'coordinates' in pca_data and 'species_names' in pca_data:
+                coords = pca_data['coordinates']
+                species = pca_data['species_names']
+                
+                fig.add_trace(go.Scatter(
+                    x=[coord[0] for coord in coords],
+                    y=[coord[1] for coord in coords],
+                    mode='markers+text',
+                    text=species,
+                    textposition='top center',
+                    marker=dict(size=10, color='blue'),
+                    name='種'
+                ))
+        
+        fig.update_layout(
+            title="機能的空間 (PCA)",
+            xaxis_title="PC1",
+            yaxis_title="PC2",
+            template="plotly_white",
+            height=400
+        )
+        
+        return fig
+    
+    def _create_functional_indices_chart(self, results: Dict[str, Any]) -> go.Figure:
+        """Create functional diversity indices chart."""
+        fig = go.Figure()
+        
+        if 'functional_diversity' in results:
+            indices = results['functional_diversity']
+            metrics = []
+            values = []
+            
+            for metric, value in indices.items():
+                if isinstance(value, (int, float)):
+                    metrics.append(metric)
+                    values.append(value)
+            
+            fig.add_trace(go.Bar(
+                x=metrics,
+                y=values,
+                marker_color='lightblue'
+            ))
+        
+        fig.update_layout(
+            title="機能的多様性指標",
+            xaxis_title="指標",
+            yaxis_title="値",
+            template="plotly_white",
+            height=400
+        )
+        
+        return fig
+    
+    def _create_functional_groups_plot(self, results: Dict[str, Any]) -> go.Figure:
+        """Create functional groups dendrogram."""
+        fig = go.Figure()
+        
+        if 'functional_groups' in results:
+            groups = results['functional_groups']
+            if 'group_assignments' in groups:
+                assignments = groups['group_assignments']
+                species = list(assignments.keys())
+                group_ids = list(assignments.values())
+                
+                fig.add_trace(go.Scatter(
+                    x=list(range(len(species))),
+                    y=group_ids,
+                    mode='markers+text',
+                    text=species,
+                    textposition='top center',
+                    marker=dict(size=10, color=group_ids, colorscale='Set3'),
+                    name='機能群'
+                ))
+        
+        fig.update_layout(
+            title="機能群クラスタリング",
+            xaxis_title="種インデックス",
+            yaxis_title="機能群ID",
+            template="plotly_white",
+            height=400
+        )
+        
+        return fig
+    
+    def _combine_analysis_charts(self, figures: List[go.Figure], title: str) -> str:
+        """Combine multiple analysis charts into dashboard."""
+        html_parts = [
+            f"<html><head><title>{title}</title>",
+            "<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>",
+            "<style>body { font-family: Arial, sans-serif; margin: 20px; }</style>",
+            f"</head><body><h1>{title}</h1>"
+        ]
+        
+        for i, fig in enumerate(figures):
+            div_id = f"chart_{i}"
+            html_parts.append(f"<div id='{div_id}' style='margin: 20px 0;'></div>")
+            
+            fig_json = fig.to_json()
+            html_parts.append(f"""
+            <script>
+                Plotly.newPlot('{div_id}', {fig_json});
+            </script>
+            """)
+        
+        html_parts.append("</body></html>")
+        return "\n".join(html_parts)
+    
     def _wrap_dashboard_html(self, plotly_html: str, title: str) -> str:
         """Wrap Plotly HTML with dashboard styling."""
         return f"""

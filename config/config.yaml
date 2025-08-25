@@ -211,3 +211,46 @@ development:
     enabled: false
     folds: 5
     stratified: true
+
+visualization:
+  calendar:
+    default_metric: "shannon_diversity"
+    color_scheme: "viridis"
+    cell_size: 15
+    show_weekdays: true
+    show_month_labels: true
+    
+  time_series:
+    default_metrics: ["shannon_diversity", "species_richness"]
+    chart_height: 400
+    show_confidence_intervals: true
+    
+  dashboard:
+    refresh_interval: 300  # seconds
+    max_species_display: 20
+    chart_theme: "plotly_white"
+
+advanced_analysis:
+  comparative_analysis:
+    significance_level: 0.05
+    bootstrap_iterations: 1000
+    min_sample_size: 5
+    correlation_method: "spearman"  # pearson, spearman, kendall
+    beta_diversity_method: "bray_curtis"  # bray_curtis, jaccard, sorensen
+  
+  functional_diversity:
+    distance_metric: "euclidean"  # euclidean, manhattan, gower
+    standardize_traits: true
+    handle_missing_traits: "mean_imputation"  # mean_imputation, median_imputation, drop
+    pca_components: null  # null for auto-selection
+    clustering_method: "ward"  # ward, complete, average
+    functional_groups_threshold: 0.5
+  
+  trait_database:
+    enabled: true
+    auto_generate_sample_traits: true
+    trait_categories:
+      - "morphological"  # height, leaf_area, seed_mass
+      - "physiological"  # photosynthesis_type, nitrogen_fixation
+      - "phenological"   # flowering_timing, duration
+      - "ecological"     # dispersal_mode, root_depth

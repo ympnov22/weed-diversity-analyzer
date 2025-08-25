@@ -117,5 +117,65 @@ def dashboard(output):
         raise click.Abort()
 
 
+@cli.command()
+@click.option('--output', '-o', default='comparative_analysis.html', help='Output HTML file')
+@click.option('--data-path', help='Path to daily summaries JSON file')
+def generate_comparative_analysis(output: str, data_path: str):
+    """Generate comparative analysis dashboard."""
+    try:
+        from ..analysis.comparative_analysis import ComparativeAnalyzer
+        from ..visualization.dashboard_generator import DashboardGenerator
+        
+        analyzer = ComparativeAnalyzer()
+        dashboard_gen = DashboardGenerator()
+        
+        if data_path and Path(data_path).exists():
+            import json
+            with open(data_path, 'r') as f:
+                daily_summaries = json.load(f)
+        else:
+            daily_summaries = analyzer._generate_sample_daily_summaries()
+        
+        results = analyzer.compare_temporal_diversity(daily_summaries)
+        html = dashboard_gen.generate_comparative_analysis_dashboard(results, Path(output))
+        
+        click.echo(f"✅ Comparative analysis dashboard generated: {output}")
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}")
+
+@cli.command()
+@click.option('--output', '-o', default='functional_diversity.html', help='Output HTML file')
+@click.option('--traits-path', help='Path to traits database JSON file')
+def generate_functional_diversity(output: str, traits_path: str):
+    """Generate functional diversity analysis dashboard."""
+    try:
+        from ..analysis.functional_diversity import FunctionalDiversityAnalyzer
+        from ..visualization.dashboard_generator import DashboardGenerator
+        
+        analyzer = FunctionalDiversityAnalyzer()
+        dashboard_gen = DashboardGenerator()
+        
+        species_list = ["Taraxacum officinale", "Plantago major", "Trifolium repens", "Poa annua"]
+        
+        if traits_path and Path(traits_path).exists():
+            import json
+            with open(traits_path, 'r') as f:
+                traits_data = json.load(f)
+            analyzer.load_traits_from_dict(traits_data)
+        else:
+            sample_traits = analyzer.generate_sample_trait_database(species_list)
+            analyzer.load_traits_from_dict(sample_traits)
+        
+        sample_abundances = {species: 10 - i*2 for i, species in enumerate(species_list)}
+        results = analyzer.calculate_functional_diversity(sample_abundances)
+        
+        html = dashboard_gen.generate_functional_diversity_dashboard(results, Path(output))
+        
+        click.echo(f"✅ Functional diversity dashboard generated: {output}")
+        
+    except Exception as e:
+        click.echo(f"❌ Error: {e}")
+
 if __name__ == '__main__':
     cli()
