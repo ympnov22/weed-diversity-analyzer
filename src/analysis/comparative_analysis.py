@@ -154,7 +154,7 @@ class ComparativeAnalyzer(LoggerMixin):
         
         abundance_matrix = np.array(abundance_matrix_list, dtype=np.float64)
         
-        results = {
+        results: Dict[str, Any] = {
             'sites': site_names,
             'total_species': len(all_species),
             'species_list': all_species,
@@ -196,7 +196,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if len(daily_summaries) < self.config.min_sample_size:
             return self._empty_correlation_analysis()
         
-        species_data = {}
+        species_data: Dict[str, List[int]] = {}
         dates = []
         
         for summary in daily_summaries:
@@ -258,7 +258,7 @@ class ComparativeAnalyzer(LoggerMixin):
         self, 
         group1_data: List[Dict[str, Any]], 
         group2_data: List[Dict[str, Any]],
-        test_metrics: List[str] = None
+        test_metrics: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Perform statistical tests comparing two groups of diversity data.
         
