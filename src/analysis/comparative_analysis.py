@@ -385,9 +385,9 @@ class ComparativeAnalyzer(LoggerMixin):
                 'standard_deviations': monthly_stds
             },
             'seasonal_variation_coefficient': float(seasonal_cv),
-            'peak_month': max(monthly_means, key=lambda x: monthly_means[x]),
-            'low_month': min(monthly_means, key=lambda x: monthly_means[x]),
-            'seasonal_amplitude': max(monthly_means.values()) - min(monthly_means.values())
+            'peak_month': max(monthly_means.keys(), key=lambda x: monthly_means[x]),
+            'low_month': min(monthly_means.keys(), key=lambda x: monthly_means[x]),
+            'seasonal_amplitude': float(max(monthly_means.values()) - min(monthly_means.values()))
         }
     
     def _perform_temporal_tests(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -492,7 +492,7 @@ class ComparativeAnalyzer(LoggerMixin):
         
         return similarity_matrix
     
-    def _calculate_sorensen_similarity(self, abundance_matrix: np.ndarray) -> np.ndarray:
+    def _calculate_sorensen_similarity(self, abundance_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Calculate Sorensen similarity matrix."""
         presence_matrix = (abundance_matrix > 0).astype(int)
         
