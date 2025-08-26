@@ -7,9 +7,9 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from .database import Base  # type: ignore
+from .database import Base
 
-class UserModel(Base):
+class UserModel(Base):  # type: ignore[valid-type,misc]
     """User model for simple authentication."""
     __tablename__ = "users"
     
@@ -22,7 +22,7 @@ class UserModel(Base):
     
     analysis_sessions = relationship("AnalysisSessionModel", back_populates="user")
 
-class AnalysisSessionModel(Base):
+class AnalysisSessionModel(Base):  # type: ignore[valid-type,misc]
     """Analysis session model to group related data."""
     __tablename__ = "analysis_sessions"
     
@@ -37,7 +37,7 @@ class AnalysisSessionModel(Base):
     user = relationship("UserModel", back_populates="analysis_sessions")
     diversity_metrics = relationship("DiversityMetricsModel", back_populates="session")
 
-class DiversityMetricsModel(Base):
+class DiversityMetricsModel(Base):  # type: ignore[valid-type,misc]
     """Diversity metrics model based on existing DiversityMetrics dataclass."""
     __tablename__ = "diversity_metrics"
     
@@ -66,7 +66,7 @@ class DiversityMetricsModel(Base):
     session = relationship("AnalysisSessionModel", back_populates="diversity_metrics")
     prediction_results = relationship("PredictionResultModel", back_populates="diversity_metrics")
 
-class ImageDataModel(Base):
+class ImageDataModel(Base):  # type: ignore[valid-type,misc]
     """Image data model based on existing ImageData dataclass."""
     __tablename__ = "image_data"
     
@@ -90,7 +90,7 @@ class ImageDataModel(Base):
     
     prediction_results = relationship("PredictionResultModel", back_populates="image_data")
 
-class PredictionResultModel(Base):
+class PredictionResultModel(Base):  # type: ignore[valid-type,misc]
     """Prediction result model based on existing PredictionResult dataclass."""
     __tablename__ = "prediction_results"
     
@@ -111,7 +111,7 @@ class PredictionResultModel(Base):
     diversity_metrics = relationship("DiversityMetricsModel", back_populates="prediction_results")
     image_data = relationship("ImageDataModel", back_populates="prediction_results")
 
-class ProcessingResultModel(Base):
+class ProcessingResultModel(Base):  # type: ignore[valid-type,misc]
     """Processing result model for daily processing summaries."""
     __tablename__ = "processing_results"
     
