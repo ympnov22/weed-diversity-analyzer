@@ -69,8 +69,9 @@ class DiversityCalculator(LoggerMixin):
             pielou = 1.0
         
         hill_numbers = {}
-        for q in self.config.hill_orders:
-            hill_numbers[f'hill_q{q}'] = self._calculate_hill_number(proportions, q)
+        if self.config.hill_orders is not None:
+            for q in self.config.hill_orders:
+                hill_numbers[f'hill_q{q}'] = self._calculate_hill_number(proportions, q)
         
         simpson = 1.0 - np.sum(proportions ** 2)
         
@@ -186,8 +187,9 @@ class DiversityCalculator(LoggerMixin):
             'simpson_diversity': []
         }
         
-        for q in self.config.hill_orders:
-            bootstrap_results[f'hill_q{q}'] = []
+        if self.config.hill_orders is not None:
+            for q in self.config.hill_orders:
+                bootstrap_results[f'hill_q{q}'] = []
         
         for _ in range(self.config.bootstrap_iterations):
             bootstrap_sample = np.random.choice(
@@ -209,12 +211,12 @@ class DiversityCalculator(LoggerMixin):
         
         for metric_name, values in bootstrap_results.items():
             if values:
-                values = np.array(values, dtype=np.float64)
+                values_array = np.array(values, dtype=np.float64)
                 lower_percentile = (alpha / 2) * 100
                 upper_percentile = (1 - alpha / 2) * 100
                 
-                lower_ci = np.percentile(values, lower_percentile)
-                upper_ci = np.percentile(values, upper_percentile)
+                lower_ci = np.percentile(values_array, lower_percentile)
+                upper_ci = np.percentile(values_array, upper_percentile)
                 
                 confidence_intervals[metric_name] = (float(lower_ci), float(upper_ci))
         
@@ -278,7 +280,8 @@ class DiversityCalculator(LoggerMixin):
             'total_individuals': 0
         }
         
-        for q in self.config.hill_orders:
-            metrics[f'hill_q{q}'] = 0.0
+        if self.config.hill_orders is not None:
+            for q in self.config.hill_orders:
+                metrics[f'hill_q{q}'] = 0.0
         
         return metrics
