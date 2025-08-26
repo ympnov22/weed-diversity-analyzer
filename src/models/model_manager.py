@@ -29,19 +29,19 @@ class ModelManager(LoggerMixin):
     def load_models(self) -> bool:
         """Load primary and fallback models."""
         try:
-            primary_config = self.config.get_model_config('primary')
+            primary_config = self.config.get_primary_model()
             if not primary_config:
                 self.logger.error("No primary model configuration found")
                 return False
             
-            self.primary_model = self._create_model(primary_config)
+            self.primary_model = self._create_model_from_config(primary_config)
             if not self.primary_model.load_model():
                 self.logger.error("Failed to load primary model")
                 return False
             
-            fallback_configs = self.config.get_model_config('fallback', [])
+            fallback_configs = self.config.get_fallback_models()
             for i, fallback_config in enumerate(fallback_configs):
-                fallback_model = self._create_model(fallback_config)
+                fallback_model = self._create_model_from_config(fallback_config)
                 if fallback_model.load_model():
                     self.fallback_models.append(fallback_model)
                     self.logger.info(f"Loaded fallback model {i+1}")
@@ -55,11 +55,11 @@ class ModelManager(LoggerMixin):
             self.logger.error(f"Failed to load models: {e}")
             return False
     
-    def _create_model(self, model_config: Dict[str, Any]) -> BaseModel:
+    def _create_model_from_config(self, model_config) -> BaseModel:
         """Create model instance from configuration.
         
         Args:
-            model_config: Model configuration dictionary
+            model_config: ModelConfig instance from ConfigManager
             
         Returns:
             Model instance
@@ -67,17 +67,26 @@ class ModelManager(LoggerMixin):
         from .base_model import ModelConfig
         
         config = ModelConfig(
-            model_name=model_config.get('name', 'inatag'),
-            model_path=model_config.get('model_path', 'data/models/inatag'),
-            confidence_threshold=model_config.get('confidence_threshold', 0.5),
-            top_k=model_config.get('top_k', 3),
-            device=model_config.get('device', 'auto'),
-            batch_size=model_config.get('batch_size', 32),
-            use_lora=model_config.get('use_lora', False),
-            lora_path=model_config.get('lora_path')
+            model_name=model_config.name,
+            model_path=model_config.model_path,
+            confidence_threshold=model_config.confidence_threshold,
+            top_k=model_config.top_k or 3,
+            device='auto',
+            batch_size=32,
+            use_lora=False,
+            lora_path=None
         )
         
-        model_size = model_config.get('size', 'base')
+        model_size = 'base'  # Default size
+        if hasattr(model_config, 'size'):
+            model_size = model_config.size
+        elif 'tiny' in model_config.name.lower():
+            model_size = 'tiny'
+        elif 'small' in model_config.name.lower():
+            model_size = 'small'
+        elif 'large' in model_config.name.lower():
+            model_size = 'large'
+        
         return iNatAgModel(config, model_size)
     
     def predict_with_fallback(self, image: np.ndarray) -> PredictionResult:

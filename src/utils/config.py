@@ -91,13 +91,23 @@ class ConfigManager:
     
     def get_primary_model(self) -> ModelConfig:
         """Get primary model configuration."""
-        model_config = self._config['models']['primary']
+        model_config = self._config['models']['primary'].copy()
+        # Remove fields that aren't part of ModelConfig dataclass
+        for field in ['size', 'use_lora', 'lora_path', 'device', 'batch_size']:
+            model_config.pop(field, None)
         return ModelConfig(**model_config)
     
     def get_fallback_models(self) -> list[ModelConfig]:
         """Get fallback model configurations."""
         fallback_configs = self._config['models']['fallback']
-        return [ModelConfig(**config) for config in fallback_configs]
+        models = []
+        for config in fallback_configs:
+            config_copy = config.copy()
+            # Remove fields that aren't part of ModelConfig dataclass
+            for field in ['size', 'use_lora', 'lora_path', 'device', 'batch_size']:
+                config_copy.pop(field, None)
+            models.append(ModelConfig(**config_copy))
+        return models
     
     def get_preprocessing_config(self) -> Dict[str, Any]:
         """Get preprocessing configuration."""

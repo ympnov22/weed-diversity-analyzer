@@ -18,6 +18,8 @@ from ..database.database import get_db
 from ..database.services import DatabaseService
 from ..auth.dependencies import require_auth, optional_auth
 from ..database.models import UserModel
+from ..models.model_manager import ModelManager
+from ..utils.config import ConfigManager
 from .calendar_visualizer import CalendarVisualizer
 from .time_series_visualizer import TimeSeriesVisualizer
 from .dashboard_generator import DashboardGenerator
@@ -48,6 +50,19 @@ class WebServer(LoggerMixin):
         self.calendar_viz = CalendarVisualizer()
         self.time_series_viz = TimeSeriesVisualizer()
         self.dashboard_gen = DashboardGenerator()
+        
+        try:
+            config_manager = ConfigManager()
+            self.model_manager = ModelManager(config_manager)
+            self.model_loaded = self.model_manager.load_models()
+            if self.model_loaded:
+                self.logger.info("iNatAg models loaded successfully")
+            else:
+                self.logger.warning("Failed to load iNatAg models")
+        except Exception as e:
+            self.logger.error(f"Model initialization failed: {e}")
+            self.model_manager = None
+            self.model_loaded = False
         
         self.static_dir = Path(__file__).parent / "static"
         self.static_dir.mkdir(exist_ok=True)
@@ -667,18 +682,27 @@ class WebServer(LoggerMixin):
         async def health_check():
             """Health check endpoint for deployment monitoring."""
             try:
+                database_status = "disconnected"
                 if os.getenv("DATABASE_URL"):
                     try:
                         with next(get_db()) as db:
                             db.execute("SELECT 1")
+                        database_status = "connected"
                     except Exception:
-                        pass
+                        database_status = "error"
+                else:
+                    database_status = "file-based"
                 
                 return {
                     "status": "healthy",
                     "timestamp": datetime.now().isoformat(),
                     "version": "1.0.0",
-                    "database": "connected" if os.getenv("DATABASE_URL") else "file-based"
+                    "database": database_status,
+                    "model_loaded": self.model_loaded,
+                    "model_info": {
+                        "primary_model": self.model_manager.primary_model.config.model_name if self.model_manager and self.model_manager.primary_model else None,
+                        "fallback_models": len(self.model_manager.fallback_models) if self.model_manager else 0
+                    } if self.model_loaded else None
                 }
             except Exception as e:
                 self.logger.error(f"Health check failed: {e}")
