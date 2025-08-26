@@ -2,7 +2,7 @@
 
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import declarative_base, DeclarativeMeta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session
@@ -31,7 +31,7 @@ else:
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-Base = declarative_base()
+Base: DeclarativeMeta = declarative_base()
 
 def get_db() -> Generator[Session, None, None]:
     """Get database session."""
