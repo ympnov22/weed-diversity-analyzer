@@ -385,8 +385,8 @@ class ComparativeAnalyzer(LoggerMixin):
                 'standard_deviations': monthly_stds
             },
             'seasonal_variation_coefficient': float(seasonal_cv),
-            'peak_month': max(monthly_means.keys(), key=lambda x: monthly_means[x]),
-            'low_month': min(monthly_means.keys(), key=lambda x: monthly_means[x]),
+            'peak_month': max(monthly_means.keys(), key=lambda x: float(monthly_means[x])),
+            'low_month': min(monthly_means.keys(), key=lambda x: float(monthly_means[x])),
             'seasonal_amplitude': float(max(monthly_means.values()) - min(monthly_means.values()))
         }
     
@@ -910,7 +910,7 @@ class ComparativeAnalyzer(LoggerMixin):
                         'species_2': species_names[j]
                     })
         
-        significant_correlations.sort(key=lambda x: abs(float(x['correlation'])), reverse=True)
+        significant_correlations.sort(key=lambda x: abs(float(x.get('correlation', 0.0))), reverse=True)
         
         return significant_correlations
     
@@ -925,7 +925,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if denominator == 0:
             return 0.0
         
-        return numerator / denominator
+        return float(numerator / denominator)
     
     def _empty_temporal_comparison(self) -> Dict[str, Any]:
         """Return empty temporal comparison result."""
