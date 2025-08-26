@@ -147,7 +147,7 @@ class SoftVotingSystem(LoggerMixin):
             ]
         
         species_weights: Dict[str, float] = defaultdict(float)
-        species_info = {}
+        species_info: Dict[str, Dict[str, Any]] = {}
         
         for prediction, weight in weighted_predictions:
             species_name = prediction.species_name
@@ -162,11 +162,8 @@ class SoftVotingSystem(LoggerMixin):
                     'prediction_count': 0
                 }
             
-            if species_info[species_name]['total_weight'] is not None:
-                species_info[species_name]['total_weight'] += weight
-            else:
-                species_info[species_name]['total_weight'] = weight
-            species_info[species_name]['prediction_count'] += 1
+            species_info[species_name]['total_weight'] = float(species_info[species_name]['total_weight']) + weight
+            species_info[species_name]['prediction_count'] = int(species_info[species_name]['prediction_count']) + 1
         
         sorted_species = sorted(
             species_weights.items(), 
@@ -178,14 +175,15 @@ class SoftVotingSystem(LoggerMixin):
         for species_name, total_weight in sorted_species:
             info = species_info[species_name]
             
-            avg_confidence = total_weight / info['prediction_count'] if info['prediction_count'] > 0 else 0.0
+            prediction_count = int(info['prediction_count'])
+            avg_confidence = total_weight / prediction_count if prediction_count > 0 else 0.0
             
             aggregated_pred = SpeciesPrediction(
                 species_name=species_name,
                 confidence=float(avg_confidence),
-                taxonomic_level=info['taxonomic_level'],
-                scientific_name=info['scientific_name'],
-                common_name=info['common_name']
+                taxonomic_level=str(info['taxonomic_level']),
+                scientific_name=str(info['scientific_name']) if info['scientific_name'] is not None else None,
+                common_name=str(info['common_name']) if info['common_name'] is not None else None
             )
             aggregated_predictions.append(aggregated_pred)
         
