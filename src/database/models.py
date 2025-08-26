@@ -3,9 +3,14 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean, JSON, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.ext.declarative import DeclarativeMeta
 from datetime import datetime
+from typing import TYPE_CHECKING
 
-from .database import Base
+if TYPE_CHECKING:
+    from .database import Base
+else:
+    from .database import Base
 
 class UserModel(Base):
     """User model for simple authentication."""

@@ -112,7 +112,7 @@ class BaseModel(ABC, LoggerMixin):
         
         normalized = (image_rgb - mean) / std
         
-        return normalized
+        return normalized.astype(np.float32)
     
     def postprocess_predictions(self, raw_outputs: np.ndarray[Any, np.dtype[Any]]) -> List[SpeciesPrediction]:
         """Convert raw model outputs to species predictions.
