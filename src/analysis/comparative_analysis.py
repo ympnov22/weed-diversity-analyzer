@@ -282,7 +282,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if test_metrics is None:
             test_metrics = list(set(group1_metrics.keys()) & set(group2_metrics.keys()))
         
-        results = {
+        results: Dict[str, Any] = {
             'group1_summary': {
                 'sample_size': len(group1_data),
                 'metrics': list(group1_metrics.keys())
@@ -366,7 +366,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if len(values_clean) < 10:
             return {'seasonal_pattern': 'insufficient_data'}
         
-        monthly_data = {}
+        monthly_data: Dict[int, List[float]] = {}
         for doy, value in zip(day_of_year_clean, values_clean):
             month = datetime.strptime(f'2000 {doy}', '%Y %j').month
             if month not in monthly_data:
@@ -385,8 +385,8 @@ class ComparativeAnalyzer(LoggerMixin):
                 'standard_deviations': monthly_stds
             },
             'seasonal_variation_coefficient': float(seasonal_cv),
-            'peak_month': max(monthly_means, key=monthly_means.get),
-            'low_month': min(monthly_means, key=monthly_means.get),
+            'peak_month': max(monthly_means, key=lambda x: monthly_means[x]),
+            'low_month': min(monthly_means, key=lambda x: monthly_means[x]),
             'seasonal_amplitude': max(monthly_means.values()) - min(monthly_means.values())
         }
     
@@ -448,7 +448,7 @@ class ComparativeAnalyzer(LoggerMixin):
         
         return results
     
-    def _calculate_bray_curtis(self, abundance_matrix: np.ndarray) -> np.ndarray:
+    def _calculate_bray_curtis(self, abundance_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Calculate Bray-Curtis dissimilarity matrix."""
         n_sites = abundance_matrix.shape[0]
         dissimilarity_matrix = np.zeros((n_sites, n_sites))
@@ -468,7 +468,7 @@ class ComparativeAnalyzer(LoggerMixin):
         
         return dissimilarity_matrix
     
-    def _calculate_jaccard_similarity(self, abundance_matrix: np.ndarray) -> np.ndarray:
+    def _calculate_jaccard_similarity(self, abundance_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Calculate Jaccard similarity matrix."""
         presence_matrix = (abundance_matrix > 0).astype(int)
         
