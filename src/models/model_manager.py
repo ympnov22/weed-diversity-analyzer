@@ -67,7 +67,7 @@ class ModelManager(LoggerMixin):
         from .base_model import ModelConfig
         
         config = ModelConfig(
-            model_name=model_config.name,
+            model_name=model_config.model_name,
             model_path=model_config.model_path,
             confidence_threshold=model_config.confidence_threshold,
             top_k=model_config.top_k or 3,
@@ -80,11 +80,11 @@ class ModelManager(LoggerMixin):
         model_size = 'base'  # Default size
         if hasattr(model_config, 'size'):
             model_size = model_config.size
-        elif 'tiny' in model_config.name.lower():
+        elif 'tiny' in model_config.model_name.lower():
             model_size = 'tiny'
-        elif 'small' in model_config.name.lower():
+        elif 'small' in model_config.model_name.lower():
             model_size = 'small'
-        elif 'large' in model_config.name.lower():
+        elif 'large' in model_config.model_name.lower():
             model_size = 'large'
         
         return iNatAgModel(config, model_size)

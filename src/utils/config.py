@@ -50,7 +50,7 @@ class ConfigManager:
         try:
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
-            return config
+            return dict(config) if config else {}
         except FileNotFoundError:
             raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
         except yaml.YAMLError as e:
@@ -111,15 +111,15 @@ class ConfigManager:
     
     def get_preprocessing_config(self) -> Dict[str, Any]:
         """Get preprocessing configuration."""
-        return self._config['preprocessing']
+        return dict(self._config['preprocessing'])
     
     def get_diversity_config(self) -> Dict[str, Any]:
         """Get diversity analysis configuration."""
-        return self._config['diversity']
+        return dict(self._config['diversity'])
     
     def get_output_config(self) -> Dict[str, Any]:
         """Get output configuration."""
-        return self._config['output']
+        return dict(self._config['output'])
     
     def create_directories(self) -> None:
         """Create necessary directories based on configuration."""

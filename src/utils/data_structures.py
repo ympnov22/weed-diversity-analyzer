@@ -26,7 +26,7 @@ class ImageData:
     cluster_id: Optional[int] = None
     similarity_score: Optional[float] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate and process data after initialization."""
         if isinstance(self.path, str):
             self.path = Path(self.path)
@@ -45,7 +45,7 @@ class SpeciesPrediction:
     scientific_name: Optional[str] = None
     common_name: Optional[str] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate prediction data."""
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError(f"Confidence must be between 0 and 1, got {self.confidence}")
@@ -65,7 +65,7 @@ class PredictionResult:
     mean_confidence: Optional[float] = None
     prediction_entropy: Optional[float] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Calculate derived metrics."""
         if isinstance(self.image_path, str):
             self.image_path = Path(self.image_path)
@@ -73,7 +73,7 @@ class PredictionResult:
         if self.predictions:
             self.top_prediction = max(self.predictions, key=lambda p: p.confidence)
             
-            self.mean_confidence = np.mean([p.confidence for p in self.predictions])
+            self.mean_confidence = float(np.mean([p.confidence for p in self.predictions]))
             
             confidences = np.array([p.confidence for p in self.predictions])
             if confidences.sum() > 0:
@@ -117,7 +117,7 @@ class DiversityMetrics:
     
     top_species: List[Dict[str, Any]] = field(default_factory=list)
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Validate and calculate derived metrics."""
         if isinstance(self.date, str):
             self.date = datetime.fromisoformat(self.date)
@@ -176,7 +176,7 @@ class ProcessingResult:
     clusters_found: int
     redundancy_reduction_ratio: float
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Calculate derived statistics."""
         if isinstance(self.date, str):
             self.date = datetime.fromisoformat(self.date)

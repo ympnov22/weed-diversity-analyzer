@@ -15,7 +15,7 @@ from ..utils.logger import LoggerMixin
 class TimeSeriesVisualizer(LoggerMixin):
     """Generate time series visualizations for diversity trends."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize time series visualizer."""
         pass
     
@@ -243,8 +243,8 @@ class TimeSeriesVisualizer(LoggerMixin):
             
             for month in months:
                 if month in monthly_data and monthly_data[month]:
-                    monthly_means.append(np.mean(monthly_data[month]))
-                    monthly_stds.append(np.std(monthly_data[month]))
+                    monthly_means.append(float(np.mean(monthly_data[month])))
+                    monthly_stds.append(float(np.std(monthly_data[month])))
                 else:
                     monthly_means.append(0.0)
                     monthly_stds.append(0.0)

@@ -16,27 +16,25 @@ class TestModelManager:
     @pytest.fixture
     def mock_config(self):
         """Create mock configuration manager."""
+        from src.models.base_model import ModelConfig
+        
         config = Mock()
-        config.get_model_config = Mock(side_effect=lambda key, default=None: {
-            'primary': {
-                'name': 'inatag',
-                'size': 'base',
-                'model_path': 'data/models/inatag',
-                'confidence_threshold': 0.7,
-                'top_k': 3,
-                'device': 'cpu'
-            },
-            'fallback': [
-                {
-                    'name': 'inatag_tiny',
-                    'size': 'tiny',
-                    'model_path': 'data/models/inatag',
-                    'confidence_threshold': 0.5,
-                    'top_k': 3,
-                    'device': 'cpu'
-                }
-            ]
-        }.get(key, default))
+        
+        primary_config = ModelConfig(
+            model_name='inatag',
+            model_path='data/models/inatag',
+            confidence_threshold=0.7,
+            top_k=3
+        )
+        config.get_primary_model = Mock(return_value=primary_config)
+        
+        fallback_config = ModelConfig(
+            model_name='inatag_tiny',
+            model_path='data/models/inatag',
+            confidence_threshold=0.5,
+            top_k=3
+        )
+        config.get_fallback_models = Mock(return_value=[fallback_config])
         
         return config
     

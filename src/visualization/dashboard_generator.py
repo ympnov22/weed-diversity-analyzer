@@ -15,7 +15,7 @@ from ..utils.logger import LoggerMixin
 class DashboardGenerator(LoggerMixin):
     """Generate iNatAg-specific dashboard components."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize dashboard generator."""
         pass
     
@@ -306,8 +306,8 @@ class DashboardGenerator(LoggerMixin):
             HTML string for soft voting analysis
         """
         try:
-            confidence_distributions = []
-            top_species_confidence = {}
+            confidence_distributions: List[float] = []
+            top_species_confidence: Dict[str, List[float]] = {}
             
             for summary in daily_summaries:
                 processing_info = summary.get("processing_info", {})
@@ -350,7 +350,7 @@ class DashboardGenerator(LoggerMixin):
                 )
             
             top_3_species = sorted(top_species_confidence.items(), 
-                                 key=lambda x: np.mean(x[1]), reverse=True)[:3]
+                                 key=lambda x: float(np.mean(x[1])), reverse=True)[:3]
             
             for i, (species_name, confidences) in enumerate(top_3_species):
                 fig.add_trace(

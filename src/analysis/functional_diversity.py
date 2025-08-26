@@ -72,7 +72,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         self.trait_database: Dict[str, FunctionalTraits] = {}
         self.scaler = StandardScaler()
     
-    def add_species_traits(self, traits: FunctionalTraits):
+    def add_species_traits(self, traits: FunctionalTraits) -> None:
         """Add functional traits for a species.
         
         Args:
@@ -80,7 +80,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         """
         self.trait_database[traits.species_name] = traits
     
-    def load_traits_from_dict(self, traits_dict: Dict[str, Dict[str, Any]]):
+    def load_traits_from_dict(self, traits_dict: Dict[str, Dict[str, Any]]) -> None:
         """Load traits from dictionary.
         
         Args:
@@ -302,12 +302,12 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         self, 
         species_list: List[str], 
         trait_subset: Optional[List[str]] = None
-    ) -> Tuple[np.ndarray, List[str]]:
+    ) -> Tuple[np.ndarray[Any, np.dtype[Any]], List[str]]:
         """Create trait matrix for analysis."""
         if not species_list:
             return np.array([]), []
         
-        all_traits = set()
+        all_traits: set[str] = set()
         for species in species_list:
             if species in self.trait_database:
                 trait_dict = self.trait_database[species].to_dict()
@@ -405,7 +405,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         
         return trait_matrix, traits_to_use
     
-    def _calculate_functional_richness(self, trait_matrix: np.ndarray) -> float:
+    def _calculate_functional_richness(self, trait_matrix: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate functional richness (FRic)."""
         if trait_matrix.shape[0] < 2:
             return 0.0
