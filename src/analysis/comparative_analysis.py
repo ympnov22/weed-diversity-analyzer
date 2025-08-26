@@ -891,8 +891,8 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _find_significant_correlations(
         self, 
-        correlation_matrix: np.ndarray, 
-        p_value_matrix: np.ndarray, 
+        correlation_matrix: np.ndarray[Any, np.dtype[Any]], 
+        p_value_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> List[Dict[str, Any]]:
         """Find significant correlations between species."""
@@ -910,11 +910,11 @@ class ComparativeAnalyzer(LoggerMixin):
                         'species_2': species_names[j]
                     })
         
-        significant_correlations.sort(key=lambda x: abs(x['correlation']), reverse=True)
+        significant_correlations.sort(key=lambda x: abs(float(x['correlation'])), reverse=True)
         
         return significant_correlations
     
-    def _calculate_phi_coefficient(self, contingency_table: np.ndarray) -> float:
+    def _calculate_phi_coefficient(self, contingency_table: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate Phi coefficient for 2x2 contingency table."""
         a, b = contingency_table[0]
         c, d = contingency_table[1]
