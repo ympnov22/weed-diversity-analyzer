@@ -522,7 +522,7 @@ class ComparativeAnalyzer(LoggerMixin):
         site_names: List[str]
     ) -> Dict[str, Any]:
         """Analyze species turnover between sites."""
-        turnover_results = {
+        turnover_results: Dict[str, Any] = {
             'pairwise_turnover': {},
             'overall_turnover': {},
             'unique_species_per_site': {},
@@ -556,7 +556,7 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _calculate_species_correlations(
         self, 
-        abundance_matrix: np.ndarray, 
+        abundance_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Calculate species correlation matrix."""
@@ -596,13 +596,13 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _analyze_cooccurrence_patterns(
         self, 
-        abundance_matrix: np.ndarray, 
+        abundance_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Analyze species co-occurrence patterns."""
         presence_matrix = (abundance_matrix > 0).astype(int)
         
-        cooccurrence_results = {
+        cooccurrence_results: Dict[str, Any] = {
             'cooccurrence_matrix': {},
             'association_strength': {},
             'significant_associations': []
