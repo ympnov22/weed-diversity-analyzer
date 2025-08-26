@@ -733,7 +733,7 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _extract_metric_values(self, data_list: List[Dict[str, Any]]) -> Dict[str, List[float]]:
         """Extract metric values from data list."""
-        metrics = {}
+        metrics: Dict[str, List[float]] = {}
         
         for item in data_list:
             if 'diversity_metrics' in item:
@@ -829,7 +829,7 @@ class ComparativeAnalyzer(LoggerMixin):
         else:
             return "large"
     
-    def _mann_kendall_test(self, data: np.ndarray) -> Dict[str, Any]:
+    def _mann_kendall_test(self, data: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, Any]:
         """Perform Mann-Kendall trend test."""
         n = len(data)
         
@@ -860,7 +860,7 @@ class ComparativeAnalyzer(LoggerMixin):
             'significant': p_value < self.config.significance_level
         }
     
-    def _cumsum_change_detection(self, data: np.ndarray) -> List[Dict[str, Any]]:
+    def _cumsum_change_detection(self, data: np.ndarray[Any, np.dtype[Any]]) -> List[Dict[str, Any]]:
         """Simple change point detection using cumulative sum."""
         n = len(data)
         if n < 10:
@@ -882,7 +882,7 @@ class ComparativeAnalyzer(LoggerMixin):
                         'direction': 'increase' if cumsum[i] > 0 else 'decrease'
                     })
         
-        filtered_change_points = []
+        filtered_change_points: List[Dict[str, Any]] = []
         for cp in sorted(change_points, key=lambda x: x['magnitude'], reverse=True):
             if not any(abs(cp['position'] - fcp['position']) < 5 for fcp in filtered_change_points):
                 filtered_change_points.append(cp)
