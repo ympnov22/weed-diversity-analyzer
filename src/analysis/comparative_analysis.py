@@ -28,7 +28,7 @@ class ComparisonConfig:
 class ComparativeAnalyzer(LoggerMixin):
     """Advanced comparative analysis for diversity metrics."""
     
-    def __init__(self, config: ComparisonConfig = None):
+    def __init__(self, config: Optional[ComparisonConfig] = None):
         """Initialize comparative analyzer.
         
         Args:
@@ -52,7 +52,7 @@ class ComparativeAnalyzer(LoggerMixin):
             return self._empty_temporal_comparison()
         
         dates = []
-        metrics_data = {}
+        metrics_data: Dict[str, List[Any]] = {}
         
         for summary in daily_summaries:
             if 'date' not in summary or 'diversity_metrics' not in summary:
@@ -135,12 +135,12 @@ class ComparativeAnalyzer(LoggerMixin):
         if len(site_species) < 2:
             return self._empty_beta_diversity()
         
-        all_species = set()
+        all_species_set = set()
         for species_dict in site_species.values():
-            all_species.update(species_dict.keys())
+            all_species_set.update(species_dict.keys())
         
-        all_species = sorted(list(all_species))
-        abundance_matrix = []
+        all_species = sorted(list(all_species_set))
+        abundance_matrix_list = []
         
         for site_name in site_names:
             if site_name in site_species:
@@ -148,11 +148,11 @@ class ComparativeAnalyzer(LoggerMixin):
                     site_species[site_name].get(species, 0) 
                     for species in all_species
                 ]
-                abundance_matrix.append(abundances)
+                abundance_matrix_list.append(abundances)
             else:
-                abundance_matrix.append([0] * len(all_species))
+                abundance_matrix_list.append([0] * len(all_species))
         
-        abundance_matrix = np.array(abundance_matrix)
+        abundance_matrix = np.array(abundance_matrix_list, dtype=np.float64)
         
         results = {
             'sites': site_names,
