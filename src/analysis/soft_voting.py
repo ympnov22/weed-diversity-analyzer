@@ -23,18 +23,18 @@ class SoftVotingConfig:
 class TaxonomicRollup:
     """Handle taxonomic rollup for low confidence predictions."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize taxonomic rollup system."""
-        self.species_to_genus = {}
-        self.species_to_family = {}
-        self.genus_to_family = {}
+        self.species_to_genus: Dict[str, str] = {}
+        self.species_to_family: Dict[str, str] = {}
+        self.genus_to_family: Dict[str, str] = {}
     
     def add_taxonomic_mapping(
         self, 
         species: str, 
-        genus: str = None, 
-        family: str = None
-    ):
+        genus: Optional[str] = None, 
+        family: Optional[str] = None
+    ) -> None:
         """Add taxonomic mapping for a species.
         
         Args:
@@ -95,7 +95,7 @@ class TaxonomicRollup:
 class SoftVotingSystem(LoggerMixin):
     """Soft voting system for aggregating Top-3 predictions."""
     
-    def __init__(self, config: SoftVotingConfig = None):
+    def __init__(self, config: Optional[SoftVotingConfig] = None):
         """Initialize soft voting system.
         
         Args:
@@ -146,7 +146,7 @@ class SoftVotingSystem(LoggerMixin):
                 for pred, weight in weighted_predictions
             ]
         
-        species_weights = defaultdict(float)
+        species_weights: Dict[str, float] = defaultdict(float)
         species_info = {}
         
         for prediction, weight in weighted_predictions:
@@ -162,7 +162,10 @@ class SoftVotingSystem(LoggerMixin):
                     'prediction_count': 0
                 }
             
-            species_info[species_name]['total_weight'] += weight
+            if species_info[species_name]['total_weight'] is not None:
+                species_info[species_name]['total_weight'] += weight
+            else:
+                species_info[species_name]['total_weight'] = weight
             species_info[species_name]['prediction_count'] += 1
         
         sorted_species = sorted(
