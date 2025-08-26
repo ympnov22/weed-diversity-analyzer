@@ -427,7 +427,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_functional_evenness(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate functional evenness (FEve)."""
@@ -464,7 +464,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_functional_divergence(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate functional divergence (FDiv)."""
@@ -495,7 +495,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_functional_dispersion(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate functional dispersion (FDis)."""
@@ -516,7 +516,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_raos_quadratic_entropy(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate Rao's quadratic entropy."""
@@ -541,7 +541,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _identify_functional_groups(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Identify functional groups using hierarchical clustering."""
@@ -573,7 +573,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _analyze_trait_patterns(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         trait_names: List[str], 
         abundances: Dict[str, float]
     ) -> Dict[str, Any]:
@@ -604,7 +604,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _analyze_functional_space(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Analyze functional space using PCA."""
@@ -754,7 +754,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         
         return summary_stats
     
-    def _calculate_skewness(self, data: np.ndarray) -> float:
+    def _calculate_skewness(self, data: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate skewness of data."""
         mean = np.mean(data)
         std = np.std(data)
@@ -763,9 +763,9 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
             return 0.0
         
         skewness = np.mean(((data - mean) / std) ** 3)
-        return skewness
+        return float(skewness)
     
-    def _calculate_kurtosis(self, data: np.ndarray) -> float:
+    def _calculate_kurtosis(self, data: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate kurtosis of data."""
         mean = np.mean(data)
         std = np.std(data)
@@ -774,7 +774,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
             return 0.0
         
         kurtosis = np.mean(((data - mean) / std) ** 4) - 3  # Excess kurtosis
-        return kurtosis
+        return float(kurtosis)
     
     def _empty_functional_diversity(self) -> Dict[str, Any]:
         """Return empty functional diversity result."""

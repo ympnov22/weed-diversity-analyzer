@@ -58,7 +58,7 @@ class SimilarityClusterer(LoggerMixin):
             self.logger.warning(f"Unknown feature detector: {self.config.feature_detector}, using ORB")
             self.feature_detector = cv2.ORB_create(nfeatures=self.config.max_features)
     
-    def calculate_ssim_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
+    def calculate_ssim_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate SSIM (Structural Similarity Index) between two images.
         
         Args:
@@ -79,7 +79,7 @@ class SimilarityClusterer(LoggerMixin):
         similarity_score = ssim(gray1, gray2)
         return float(similarity_score)
     
-    def calculate_histogram_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
+    def calculate_histogram_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate histogram-based similarity between two images.
         
         Args:
@@ -104,7 +104,7 @@ class SimilarityClusterer(LoggerMixin):
         
         return float(np.mean(similarities)) if similarities else 0.0
     
-    def calculate_feature_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
+    def calculate_feature_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate feature-based similarity between two images.
         
         Args:
@@ -146,7 +146,7 @@ class SimilarityClusterer(LoggerMixin):
         
         return float(min(similarity, 1.0))
     
-    def calculate_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
+    def calculate_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate similarity between two images using configured method.
         
         Args:
@@ -166,7 +166,7 @@ class SimilarityClusterer(LoggerMixin):
             self.logger.error(f"Unknown similarity method: {self.config.similarity_method}")
             return 0.0
     
-    def build_similarity_matrix(self, images: List[np.ndarray]) -> np.ndarray:
+    def build_similarity_matrix(self, images: List[np.ndarray[Any, np.dtype[Any]]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Build similarity matrix for a list of images.
         
         Args:
@@ -191,7 +191,7 @@ class SimilarityClusterer(LoggerMixin):
         
         return similarity_matrix
     
-    def cluster_images_kmeans(self, similarity_matrix: np.ndarray) -> np.ndarray:
+    def cluster_images_kmeans(self, similarity_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Cluster images using K-means on similarity matrix.
         
         Args:
@@ -212,7 +212,7 @@ class SimilarityClusterer(LoggerMixin):
         self.logger.info(f"K-means clustering created {n_clusters} clusters")
         return cluster_labels
     
-    def cluster_images_hierarchical(self, similarity_matrix: np.ndarray) -> np.ndarray:
+    def cluster_images_hierarchical(self, similarity_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Cluster images using hierarchical clustering.
         
         Args:
@@ -237,7 +237,7 @@ class SimilarityClusterer(LoggerMixin):
         self.logger.info(f"Hierarchical clustering created {n_clusters} clusters")
         return cluster_labels
     
-    def cluster_images(self, images: List[np.ndarray]) -> np.ndarray:
+    def cluster_images(self, images: List[np.ndarray[Any, np.dtype[Any]]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Cluster images using configured method.
         
         Args:
@@ -261,9 +261,9 @@ class SimilarityClusterer(LoggerMixin):
     
     def select_representative_images(
         self, 
-        images: List[np.ndarray], 
+        images: List[np.ndarray[Any, np.dtype[Any]]], 
         image_data_list: List[ImageData],
-        cluster_labels: np.ndarray
+        cluster_labels: np.ndarray[Any, np.dtype[Any]]
     ) -> List[int]:
         """Select representative images from each cluster.
         
@@ -296,9 +296,9 @@ class SimilarityClusterer(LoggerMixin):
     
     def _select_best_quality_image(
         self, 
-        cluster_images: List[np.ndarray],
+        cluster_images: List[np.ndarray[Any, np.dtype[Any]]],
         cluster_image_data: List[ImageData],
-        original_indices: np.ndarray
+        original_indices: np.ndarray[Any, np.dtype[Any]]
     ) -> int:
         """Select the best quality image from a cluster.
         
@@ -322,7 +322,7 @@ class SimilarityClusterer(LoggerMixin):
         
         return best_idx
     
-    def _calculate_quality_score(self, image: np.ndarray, image_data: ImageData) -> float:
+    def _calculate_quality_score(self, image: np.ndarray[Any, np.dtype[Any]], image_data: ImageData) -> float:
         """Calculate overall quality score for an image.
         
         Args:
