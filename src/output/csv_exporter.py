@@ -188,7 +188,7 @@ class CSVExporter(LoggerMixin):
             Path to the exported CSV file
         """
         try:
-            species_stats = {}
+            species_stats: Dict[str, Dict[str, Any]] = {}
             
             for date_str, prediction_results in daily_results.items():
                 for result in prediction_results:

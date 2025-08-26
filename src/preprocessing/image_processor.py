@@ -83,9 +83,9 @@ class ImageProcessor(LoggerMixin):
         
         blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
         
-        brightness_mean = float(np.mean(gray))
+        brightness_mean = float(np.mean(gray.astype(np.float64)))
         
-        contrast_std = float(np.std(gray))
+        contrast_std = float(np.std(gray.astype(np.float64)))
         
         underexposed = np.sum(gray < 25) / gray.size
         overexposed = np.sum(gray > 230) / gray.size
@@ -212,7 +212,7 @@ class ImageProcessor(LoggerMixin):
         
         if gamma is None:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            mean_brightness = float(np.mean(gray)) / 255.0
+            mean_brightness = float(np.mean(gray.astype(np.float64))) / 255.0
             
             if mean_brightness < 0.3:  # Dark image
                 gamma = np.random.uniform(0.8, 1.0)

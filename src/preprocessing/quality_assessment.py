@@ -62,8 +62,8 @@ class QualityAssessor(LoggerMixin):
         else:
             gray = image
         
-        mean_brightness = float(np.mean(gray))
-        std_brightness = float(np.std(gray))
+        mean_brightness = float(np.mean(gray.astype(np.float64)))
+        std_brightness = float(np.std(gray.astype(np.float64)))
         
         underexposed = np.sum(gray < 25) / gray.size
         overexposed = np.sum(gray > 230) / gray.size
@@ -115,7 +115,7 @@ class QualityAssessor(LoggerMixin):
         else:
             gray = image
         
-        contrast_score = float(np.std(gray))
+        contrast_score = float(np.std(gray.astype(np.float64)))
         return contrast_score
     
     def assess_sharpness(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
