@@ -7,10 +7,7 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from .database import Base
-else:
-    from .database import Base
+from .database import Base  # type: ignore
 
 class UserModel(Base):
     """User model for simple authentication."""
