@@ -690,9 +690,9 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_shared_functional_space(
         self, 
-        trait_matrix: np.ndarray, 
-        abundance1: np.ndarray, 
-        abundance2: np.ndarray
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
+        abundance1: np.ndarray[Any, np.dtype[Any]], 
+        abundance2: np.ndarray[Any, np.dtype[Any]]
     ) -> float:
         """Calculate shared functional space between two communities."""
         shared_species_mask = (abundance1 > 0) & (abundance2 > 0)
@@ -709,7 +709,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _perform_trait_pca(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         trait_names: List[str]
     ) -> Dict[str, Any]:
         """Perform PCA on trait matrix."""
@@ -731,7 +731,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_trait_summary_stats(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         trait_names: List[str]
     ) -> Dict[str, Dict[str, float]]:
         """Calculate summary statistics for each trait."""

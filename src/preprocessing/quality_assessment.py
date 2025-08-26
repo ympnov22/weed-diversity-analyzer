@@ -222,7 +222,7 @@ class QualityAssessor(LoggerMixin):
         if not correlations:
             return 0.0
         
-        diversity_score = 1.0 - np.mean(correlations)
+        diversity_score = 1.0 - float(np.mean(correlations))
         return max(0.0, diversity_score)
     
     def comprehensive_assessment(self, image: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, Any]:
