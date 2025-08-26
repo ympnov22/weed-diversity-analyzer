@@ -39,9 +39,9 @@ class ConfigManager:
         """
         if config_path is None:
             project_root = Path(__file__).parent.parent.parent
-            config_path = project_root / "config" / "config.yaml"
-        
-        self.config_path = Path(config_path)
+            self.config_path = project_root / "config" / "config.yaml"
+        else:
+            self.config_path = Path(config_path)
         self._config = self._load_config()
         self._validate_config()
     

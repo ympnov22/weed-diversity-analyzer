@@ -22,7 +22,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_species_distribution_chart(
         self, 
         daily_summaries: List[Dict[str, Any]], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate species distribution and frequency analysis.
         
@@ -35,7 +35,7 @@ class DashboardGenerator(LoggerMixin):
         """
         try:
             all_species = []
-            species_frequencies = Counter()
+            species_frequencies: Counter[str] = Counter()
             
             for summary in daily_summaries:
                 top_species = summary.get("top_species", [])
@@ -174,7 +174,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_model_performance_dashboard(
         self, 
         processing_metadata: Dict[str, Any], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate Swin Transformer performance comparison.
         
@@ -294,7 +294,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_soft_voting_analysis(
         self, 
         daily_summaries: List[Dict[str, Any]], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate Top-3 soft voting results analysis.
         
@@ -430,7 +430,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_comparative_analysis_dashboard(
         self, 
         comparative_results: Dict[str, Any], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate comparative analysis dashboard."""
         if not comparative_results:
@@ -456,7 +456,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_functional_diversity_dashboard(
         self, 
         functional_results: Dict[str, Any], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate functional diversity analysis dashboard."""
         if not functional_results:

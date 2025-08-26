@@ -22,7 +22,7 @@ class TimeSeriesVisualizer(LoggerMixin):
     def generate_diversity_trends_chart(
         self, 
         time_series_data: Dict[str, Any], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate interactive diversity trends chart using Plotly.
         
@@ -121,7 +121,7 @@ class TimeSeriesVisualizer(LoggerMixin):
         self,
         time_series_data: Dict[str, Any],
         metric: str = "shannon_diversity",
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate time series chart with confidence intervals.
         
@@ -204,7 +204,7 @@ class TimeSeriesVisualizer(LoggerMixin):
     def generate_seasonal_analysis_chart(
         self,
         time_series_data: Dict[str, Any],
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate seasonal pattern analysis chart.
         
@@ -223,7 +223,7 @@ class TimeSeriesVisualizer(LoggerMixin):
             if not dates or not shannon_values:
                 return self._generate_empty_chart()
             
-            monthly_data = {}
+            monthly_data: Dict[int, List[float]] = {}
             for date_str, value in zip(dates, shannon_values):
                 try:
                     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
@@ -246,8 +246,8 @@ class TimeSeriesVisualizer(LoggerMixin):
                     monthly_means.append(np.mean(monthly_data[month]))
                     monthly_stds.append(np.std(monthly_data[month]))
                 else:
-                    monthly_means.append(0)
-                    monthly_stds.append(0)
+                    monthly_means.append(0.0)
+                    monthly_stds.append(0.0)
             
             fig = go.Figure()
             

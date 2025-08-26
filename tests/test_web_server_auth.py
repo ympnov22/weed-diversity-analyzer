@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from unittest.mock import patch
 import os
 
@@ -16,7 +17,15 @@ from src.database.services import DatabaseService
 @pytest.fixture
 def test_db():
     """Create test database."""
-    engine = create_engine("sqlite:///:memory:")
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={
+            "check_same_thread": False,
+            "timeout": 20
+        },
+        poolclass=StaticPool,
+        pool_pre_ping=True
+    )
     Base.metadata.create_all(bind=engine)
     TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     

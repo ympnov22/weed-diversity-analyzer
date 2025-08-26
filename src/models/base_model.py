@@ -54,7 +54,7 @@ class BaseModel(ABC, LoggerMixin):
         """
         self.config = config
         self.model = None
-        self.species_list = []
+        self.species_list: List[str] = []
         self.is_loaded = False
     
     @abstractmethod
