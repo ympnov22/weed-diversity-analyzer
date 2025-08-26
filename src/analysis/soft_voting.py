@@ -218,7 +218,7 @@ class SoftVotingSystem(LoggerMixin):
         """
         soft_results = self.aggregate_predictions(prediction_results)
         
-        hard_votes = Counter()
+        hard_votes: Counter[str] = Counter()
         for result in prediction_results:
             if result.predictions:
                 top_prediction = result.predictions[0]
