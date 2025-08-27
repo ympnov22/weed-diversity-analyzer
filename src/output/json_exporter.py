@@ -153,7 +153,7 @@ class JSONExporter(LoggerMixin):
                 calendar_entry = {
                     "date": summary["date"],
                     "value": float(metric_value),
-                    "level": self._calculate_intensity_level(metric_value, calendar_data["scale"]),
+                    "level": self._calculate_intensity_level(float(metric_value), calendar_data["scale"]),
                     "species_count": diversity_metrics.get("species_richness", 0),
                     "total_images": summary.get("metadata", {}).get("total_images_processed", 0)
                 }
