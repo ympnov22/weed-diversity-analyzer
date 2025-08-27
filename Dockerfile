@@ -31,11 +31,12 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH"
 
-# Install runtime dependencies including OpenMP for scikit-learn
+# Install runtime dependencies including OpenMP and C++ stdlib for scikit-learn
 RUN apk add --no-cache \
     postgresql-libs \
     curl \
-    libgomp
+    libgomp \
+    libstdc++
 
 # Copy virtual environment from builder stage
 COPY --from=builder /opt/venv /opt/venv
