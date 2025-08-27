@@ -23,18 +23,18 @@ class SoftVotingConfig:
 class TaxonomicRollup:
     """Handle taxonomic rollup for low confidence predictions."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize taxonomic rollup system."""
-        self.species_to_genus = {}
-        self.species_to_family = {}
-        self.genus_to_family = {}
+        self.species_to_genus: Dict[str, str] = {}
+        self.species_to_family: Dict[str, str] = {}
+        self.genus_to_family: Dict[str, str] = {}
     
     def add_taxonomic_mapping(
         self, 
         species: str, 
-        genus: str = None, 
-        family: str = None
-    ):
+        genus: Optional[str] = None, 
+        family: Optional[str] = None
+    ) -> None:
         """Add taxonomic mapping for a species.
         
         Args:
@@ -95,7 +95,7 @@ class TaxonomicRollup:
 class SoftVotingSystem(LoggerMixin):
     """Soft voting system for aggregating Top-3 predictions."""
     
-    def __init__(self, config: SoftVotingConfig = None):
+    def __init__(self, config: Optional[SoftVotingConfig] = None):
         """Initialize soft voting system.
         
         Args:
@@ -146,8 +146,8 @@ class SoftVotingSystem(LoggerMixin):
                 for pred, weight in weighted_predictions
             ]
         
-        species_weights = defaultdict(float)
-        species_info = {}
+        species_weights: Dict[str, float] = defaultdict(float)
+        species_info: Dict[str, Dict[str, Any]] = {}
         
         for prediction, weight in weighted_predictions:
             species_name = prediction.species_name
@@ -162,8 +162,8 @@ class SoftVotingSystem(LoggerMixin):
                     'prediction_count': 0
                 }
             
-            species_info[species_name]['total_weight'] += weight
-            species_info[species_name]['prediction_count'] += 1
+            species_info[species_name]['total_weight'] = float(species_info[species_name]['total_weight']) + weight
+            species_info[species_name]['prediction_count'] = int(species_info[species_name]['prediction_count']) + 1
         
         sorted_species = sorted(
             species_weights.items(), 
@@ -175,14 +175,15 @@ class SoftVotingSystem(LoggerMixin):
         for species_name, total_weight in sorted_species:
             info = species_info[species_name]
             
-            avg_confidence = total_weight / info['prediction_count'] if info['prediction_count'] > 0 else 0.0
+            prediction_count = int(info['prediction_count'])
+            avg_confidence = total_weight / prediction_count if prediction_count > 0 else 0.0
             
             aggregated_pred = SpeciesPrediction(
                 species_name=species_name,
                 confidence=float(avg_confidence),
-                taxonomic_level=info['taxonomic_level'],
-                scientific_name=info['scientific_name'],
-                common_name=info['common_name']
+                taxonomic_level=str(info['taxonomic_level']),
+                scientific_name=str(info['scientific_name']) if info['scientific_name'] is not None else None,
+                common_name=str(info['common_name']) if info['common_name'] is not None else None
             )
             aggregated_predictions.append(aggregated_pred)
         
@@ -217,7 +218,7 @@ class SoftVotingSystem(LoggerMixin):
         """
         soft_results = self.aggregate_predictions(prediction_results)
         
-        hard_votes = Counter()
+        hard_votes: Counter[str] = Counter()
         for result in prediction_results:
             if result.predictions:
                 top_prediction = result.predictions[0]

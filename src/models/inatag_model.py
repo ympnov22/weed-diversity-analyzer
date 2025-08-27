@@ -34,7 +34,8 @@ class iNatAgModel(BaseModel):
         self.model_size = model_size
         self.repo_id = "Project-AgML/iNatAg-models"
         self.num_classes = 2959
-        self.device = None
+        self.device: Optional[torch.device] = None
+        self.model: Optional[nn.Module] = None
         
     def _get_device(self) -> torch.device:
         """Get appropriate device for model."""
@@ -79,11 +80,12 @@ class iNatAgModel(BaseModel):
             if 'model' in state_dict:
                 state_dict = state_dict['model']
             
-            self.model.load_state_dict(state_dict, strict=False)
-            
-            device = self._get_device()
-            self.model = self.model.to(device)
-            self.model.eval()
+            if self.model is not None:
+                self.model.load_state_dict(state_dict, strict=False)
+                
+                device = self._get_device()
+                self.model = self.model.to(device)
+                self.model.eval()
             
             self._load_inatag_species_list()
             
@@ -137,12 +139,15 @@ class iNatAgModel(BaseModel):
             input_tensor = input_tensor.to(self._get_device())
             
             with torch.no_grad():
-                outputs = self.model(input_tensor)
-                if isinstance(outputs, tuple):
-                    outputs = outputs[0]
-                
-                probabilities = torch.softmax(outputs, dim=1)
-                raw_outputs = probabilities.cpu().numpy()[0]
+                if self.model is not None:
+                    outputs = self.model(input_tensor)
+                    if isinstance(outputs, tuple):
+                        outputs = outputs[0]
+                    
+                    probabilities = torch.softmax(outputs, dim=1)
+                    raw_outputs = probabilities.cpu().numpy()[0]
+                else:
+                    raise RuntimeError("Model is not loaded")
             
             predictions = self.postprocess_predictions(raw_outputs)
             processing_time = time.time() - start_time
@@ -194,12 +199,15 @@ class iNatAgModel(BaseModel):
             batch_tensor = batch_tensor.to(self._get_device())
             
             with torch.no_grad():
-                outputs = self.model(batch_tensor)
-                if isinstance(outputs, tuple):
-                    outputs = outputs[0]
-                
-                probabilities = torch.softmax(outputs, dim=1)
-                raw_outputs = probabilities.cpu().numpy()
+                if self.model is not None:
+                    outputs = self.model(batch_tensor)
+                    if isinstance(outputs, tuple):
+                        outputs = outputs[0]
+                    
+                    probabilities = torch.softmax(outputs, dim=1)
+                    raw_outputs = probabilities.cpu().numpy()
+                else:
+                    raise RuntimeError("Model is not loaded")
             
             results = []
             processing_time = (time.time() - start_time) / len(batch)

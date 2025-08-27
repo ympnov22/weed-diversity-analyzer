@@ -9,7 +9,7 @@ from .models import UserModel
 
 logger = logging.getLogger(__name__)
 
-def run_migrations():
+def run_migrations() -> None:
     """Run database migrations."""
     try:
         logger.info("Running database migrations...")
@@ -24,7 +24,7 @@ def run_migrations():
         logger.error(f"Database migration failed: {e}")
         raise
 
-def _seed_initial_data():
+def _seed_initial_data() -> None:
     """Seed initial data if needed."""
     with Session(engine) as session:
         try:

@@ -15,14 +15,14 @@ from ..utils.logger import LoggerMixin
 class DashboardGenerator(LoggerMixin):
     """Generate iNatAg-specific dashboard components."""
     
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize dashboard generator."""
         pass
     
     def generate_species_distribution_chart(
         self, 
         daily_summaries: List[Dict[str, Any]], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate species distribution and frequency analysis.
         
@@ -35,7 +35,7 @@ class DashboardGenerator(LoggerMixin):
         """
         try:
             all_species = []
-            species_frequencies = Counter()
+            species_frequencies: Counter[str] = Counter()
             
             for summary in daily_summaries:
                 top_species = summary.get("top_species", [])
@@ -174,7 +174,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_model_performance_dashboard(
         self, 
         processing_metadata: Dict[str, Any], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate Swin Transformer performance comparison.
         
@@ -294,7 +294,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_soft_voting_analysis(
         self, 
         daily_summaries: List[Dict[str, Any]], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate Top-3 soft voting results analysis.
         
@@ -306,8 +306,8 @@ class DashboardGenerator(LoggerMixin):
             HTML string for soft voting analysis
         """
         try:
-            confidence_distributions = []
-            top_species_confidence = {}
+            confidence_distributions: List[float] = []
+            top_species_confidence: Dict[str, List[float]] = {}
             
             for summary in daily_summaries:
                 processing_info = summary.get("processing_info", {})
@@ -350,7 +350,7 @@ class DashboardGenerator(LoggerMixin):
                 )
             
             top_3_species = sorted(top_species_confidence.items(), 
-                                 key=lambda x: np.mean(x[1]), reverse=True)[:3]
+                                 key=lambda x: float(np.mean(x[1])), reverse=True)[:3]
             
             for i, (species_name, confidences) in enumerate(top_3_species):
                 fig.add_trace(
@@ -430,7 +430,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_comparative_analysis_dashboard(
         self, 
         comparative_results: Dict[str, Any], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate comparative analysis dashboard."""
         if not comparative_results:
@@ -456,7 +456,7 @@ class DashboardGenerator(LoggerMixin):
     def generate_functional_diversity_dashboard(
         self, 
         functional_results: Dict[str, Any], 
-        output_path: Path = None
+        output_path: Optional[Path] = None
     ) -> str:
         """Generate functional diversity analysis dashboard."""
         if not functional_results:

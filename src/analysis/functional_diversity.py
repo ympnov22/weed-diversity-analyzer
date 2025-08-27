@@ -62,17 +62,17 @@ class FunctionalDiversityConfig:
 class FunctionalDiversityAnalyzer(LoggerMixin):
     """Analyze functional diversity based on species traits."""
     
-    def __init__(self, config: FunctionalDiversityConfig = None):
+    def __init__(self, config: Optional[FunctionalDiversityConfig] = None):
         """Initialize functional diversity analyzer.
         
         Args:
             config: Configuration for functional diversity analysis
         """
         self.config = config or FunctionalDiversityConfig()
-        self.trait_database = {}
+        self.trait_database: Dict[str, FunctionalTraits] = {}
         self.scaler = StandardScaler()
     
-    def add_species_traits(self, traits: FunctionalTraits):
+    def add_species_traits(self, traits: FunctionalTraits) -> None:
         """Add functional traits for a species.
         
         Args:
@@ -80,7 +80,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         """
         self.trait_database[traits.species_name] = traits
     
-    def load_traits_from_dict(self, traits_dict: Dict[str, Dict[str, Any]]):
+    def load_traits_from_dict(self, traits_dict: Dict[str, Dict[str, Any]]) -> None:
         """Load traits from dictionary.
         
         Args:
@@ -302,12 +302,12 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         self, 
         species_list: List[str], 
         trait_subset: Optional[List[str]] = None
-    ) -> Tuple[np.ndarray, List[str]]:
+    ) -> Tuple[np.ndarray[Any, np.dtype[Any]], List[str]]:
         """Create trait matrix for analysis."""
         if not species_list:
             return np.array([]), []
         
-        all_traits = set()
+        all_traits: set[str] = set()
         for species in species_list:
             if species in self.trait_database:
                 trait_dict = self.trait_database[species].to_dict()
@@ -331,44 +331,44 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
                 continue
             
             trait_dict = self.trait_database[species].to_dict()
-            species_traits = []
+            species_traits: List[float] = []
             
             for trait_name in traits_to_use:
                 value = trait_dict.get(trait_name)
                 
                 if trait_name == 'growth_form':
                     if value == 'annual':
-                        species_traits.append(0)
+                        species_traits.append(0.0)
                     elif value == 'perennial':
-                        species_traits.append(1)
+                        species_traits.append(1.0)
                     elif value == 'woody':
-                        species_traits.append(2)
+                        species_traits.append(2.0)
                     else:
                         species_traits.append(np.nan)
                 elif trait_name == 'photosynthesis_type':
                     if value == 'C3':
-                        species_traits.append(0)
+                        species_traits.append(0.0)
                     elif value == 'C4':
-                        species_traits.append(1)
+                        species_traits.append(1.0)
                     elif value == 'CAM':
-                        species_traits.append(2)
+                        species_traits.append(2.0)
                     else:
                         species_traits.append(np.nan)
                 elif trait_name == 'dispersal_mode':
                     if value == 'wind':
-                        species_traits.append(0)
+                        species_traits.append(0.0)
                     elif value == 'animal':
-                        species_traits.append(1)
+                        species_traits.append(1.0)
                     elif value == 'water':
-                        species_traits.append(2)
+                        species_traits.append(2.0)
                     elif value == 'ballistic':
-                        species_traits.append(3)
+                        species_traits.append(3.0)
                     else:
                         species_traits.append(np.nan)
                 elif trait_name == 'nitrogen_fixation':
-                    species_traits.append(1 if value else 0)
+                    species_traits.append(1.0 if value else 0.0)
                 else:
-                    species_traits.append(value if value is not None else np.nan)
+                    species_traits.append(float(value) if value is not None else np.nan)
             
             trait_data.append(species_traits)
             valid_species.append(species)
@@ -405,7 +405,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         
         return trait_matrix, traits_to_use
     
-    def _calculate_functional_richness(self, trait_matrix: np.ndarray) -> float:
+    def _calculate_functional_richness(self, trait_matrix: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate functional richness (FRic)."""
         if trait_matrix.shape[0] < 2:
             return 0.0
@@ -427,7 +427,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_functional_evenness(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate functional evenness (FEve)."""
@@ -464,7 +464,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_functional_divergence(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate functional divergence (FDiv)."""
@@ -495,7 +495,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_functional_dispersion(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate functional dispersion (FDis)."""
@@ -516,7 +516,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_raos_quadratic_entropy(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         abundances: Dict[str, float]
     ) -> float:
         """Calculate Rao's quadratic entropy."""
@@ -541,7 +541,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _identify_functional_groups(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Identify functional groups using hierarchical clustering."""
@@ -557,7 +557,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
             criterion='distance'
         )
         
-        functional_groups = {}
+        functional_groups: Dict[str, List[str]] = {}
         for i, species in enumerate(species_names):
             group_id = f"Group_{cluster_labels[i]}"
             if group_id not in functional_groups:
@@ -573,7 +573,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _analyze_trait_patterns(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         trait_names: List[str], 
         abundances: Dict[str, float]
     ) -> Dict[str, Any]:
@@ -604,7 +604,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _analyze_functional_space(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Analyze functional space using PCA."""
@@ -633,8 +633,8 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         trait_subset: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Calculate functional beta diversity between communities."""
-        all_species = set(community1_abundances.keys()) | set(community2_abundances.keys())
-        all_species = [s for s in all_species if s in self.trait_database]
+        all_species_set = set(community1_abundances.keys()) | set(community2_abundances.keys())
+        all_species = [s for s in all_species_set if s in self.trait_database]
         
         if len(all_species) < 2:
             return {'error': 'insufficient_species_with_traits'}
@@ -690,9 +690,9 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_shared_functional_space(
         self, 
-        trait_matrix: np.ndarray, 
-        abundance1: np.ndarray, 
-        abundance2: np.ndarray
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
+        abundance1: np.ndarray[Any, np.dtype[Any]], 
+        abundance2: np.ndarray[Any, np.dtype[Any]]
     ) -> float:
         """Calculate shared functional space between two communities."""
         shared_species_mask = (abundance1 > 0) & (abundance2 > 0)
@@ -709,7 +709,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _perform_trait_pca(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         trait_names: List[str]
     ) -> Dict[str, Any]:
         """Perform PCA on trait matrix."""
@@ -731,7 +731,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
     
     def _calculate_trait_summary_stats(
         self, 
-        trait_matrix: np.ndarray, 
+        trait_matrix: np.ndarray[Any, np.dtype[Any]], 
         trait_names: List[str]
     ) -> Dict[str, Dict[str, float]]:
         """Calculate summary statistics for each trait."""
@@ -754,7 +754,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
         
         return summary_stats
     
-    def _calculate_skewness(self, data: np.ndarray) -> float:
+    def _calculate_skewness(self, data: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate skewness of data."""
         mean = np.mean(data)
         std = np.std(data)
@@ -763,9 +763,9 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
             return 0.0
         
         skewness = np.mean(((data - mean) / std) ** 3)
-        return skewness
+        return float(skewness)
     
-    def _calculate_kurtosis(self, data: np.ndarray) -> float:
+    def _calculate_kurtosis(self, data: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate kurtosis of data."""
         mean = np.mean(data)
         std = np.std(data)
@@ -774,7 +774,7 @@ class FunctionalDiversityAnalyzer(LoggerMixin):
             return 0.0
         
         kurtosis = np.mean(((data - mean) / std) ** 4) - 3  # Excess kurtosis
-        return kurtosis
+        return float(kurtosis)
     
     def _empty_functional_diversity(self) -> Dict[str, Any]:
         """Return empty functional diversity result."""

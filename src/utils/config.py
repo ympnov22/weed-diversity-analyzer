@@ -39,9 +39,9 @@ class ConfigManager:
         """
         if config_path is None:
             project_root = Path(__file__).parent.parent.parent
-            config_path = project_root / "config" / "config.yaml"
-        
-        self.config_path = Path(config_path)
+            self.config_path = project_root / "config" / "config.yaml"
+        else:
+            self.config_path = Path(config_path)
         self._config = self._load_config()
         self._validate_config()
     
@@ -50,7 +50,7 @@ class ConfigManager:
         try:
             with open(self.config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
-            return config
+            return dict(config) if config else {}
         except FileNotFoundError:
             raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
         except yaml.YAMLError as e:
@@ -91,25 +91,35 @@ class ConfigManager:
     
     def get_primary_model(self) -> ModelConfig:
         """Get primary model configuration."""
-        model_config = self._config['models']['primary']
+        model_config = self._config['models']['primary'].copy()
+        # Remove fields that aren't part of ModelConfig dataclass
+        for field in ['size', 'use_lora', 'lora_path', 'device', 'batch_size']:
+            model_config.pop(field, None)
         return ModelConfig(**model_config)
     
     def get_fallback_models(self) -> list[ModelConfig]:
         """Get fallback model configurations."""
         fallback_configs = self._config['models']['fallback']
-        return [ModelConfig(**config) for config in fallback_configs]
+        models = []
+        for config in fallback_configs:
+            config_copy = config.copy()
+            # Remove fields that aren't part of ModelConfig dataclass
+            for field in ['size', 'use_lora', 'lora_path', 'device', 'batch_size']:
+                config_copy.pop(field, None)
+            models.append(ModelConfig(**config_copy))
+        return models
     
     def get_preprocessing_config(self) -> Dict[str, Any]:
         """Get preprocessing configuration."""
-        return self._config['preprocessing']
+        return dict(self._config['preprocessing'])
     
     def get_diversity_config(self) -> Dict[str, Any]:
         """Get diversity analysis configuration."""
-        return self._config['diversity']
+        return dict(self._config['diversity'])
     
     def get_output_config(self) -> Dict[str, Any]:
         """Get output configuration."""
-        return self._config['output']
+        return dict(self._config['output'])
     
     def create_directories(self) -> None:
         """Create necessary directories based on configuration."""

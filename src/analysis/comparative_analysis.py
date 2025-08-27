@@ -28,7 +28,7 @@ class ComparisonConfig:
 class ComparativeAnalyzer(LoggerMixin):
     """Advanced comparative analysis for diversity metrics."""
     
-    def __init__(self, config: ComparisonConfig = None):
+    def __init__(self, config: Optional[ComparisonConfig] = None):
         """Initialize comparative analyzer.
         
         Args:
@@ -52,7 +52,7 @@ class ComparativeAnalyzer(LoggerMixin):
             return self._empty_temporal_comparison()
         
         dates = []
-        metrics_data = {}
+        metrics_data: Dict[str, List[Any]] = {}
         
         for summary in daily_summaries:
             if 'date' not in summary or 'diversity_metrics' not in summary:
@@ -135,12 +135,12 @@ class ComparativeAnalyzer(LoggerMixin):
         if len(site_species) < 2:
             return self._empty_beta_diversity()
         
-        all_species = set()
+        all_species_set = set()
         for species_dict in site_species.values():
-            all_species.update(species_dict.keys())
+            all_species_set.update(species_dict.keys())
         
-        all_species = sorted(list(all_species))
-        abundance_matrix = []
+        all_species = sorted(list(all_species_set))
+        abundance_matrix_list = []
         
         for site_name in site_names:
             if site_name in site_species:
@@ -148,13 +148,13 @@ class ComparativeAnalyzer(LoggerMixin):
                     site_species[site_name].get(species, 0) 
                     for species in all_species
                 ]
-                abundance_matrix.append(abundances)
+                abundance_matrix_list.append(abundances)
             else:
-                abundance_matrix.append([0] * len(all_species))
+                abundance_matrix_list.append([0] * len(all_species))
         
-        abundance_matrix = np.array(abundance_matrix)
+        abundance_matrix = np.array(abundance_matrix_list, dtype=np.float64)
         
-        results = {
+        results: Dict[str, Any] = {
             'sites': site_names,
             'total_species': len(all_species),
             'species_list': all_species,
@@ -196,7 +196,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if len(daily_summaries) < self.config.min_sample_size:
             return self._empty_correlation_analysis()
         
-        species_data = {}
+        species_data: Dict[str, List[int]] = {}
         dates = []
         
         for summary in daily_summaries:
@@ -258,7 +258,7 @@ class ComparativeAnalyzer(LoggerMixin):
         self, 
         group1_data: List[Dict[str, Any]], 
         group2_data: List[Dict[str, Any]],
-        test_metrics: List[str] = None
+        test_metrics: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """Perform statistical tests comparing two groups of diversity data.
         
@@ -282,7 +282,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if test_metrics is None:
             test_metrics = list(set(group1_metrics.keys()) & set(group2_metrics.keys()))
         
-        results = {
+        results: Dict[str, Any] = {
             'group1_summary': {
                 'sample_size': len(group1_data),
                 'metrics': list(group1_metrics.keys())
@@ -366,7 +366,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if len(values_clean) < 10:
             return {'seasonal_pattern': 'insufficient_data'}
         
-        monthly_data = {}
+        monthly_data: Dict[int, List[float]] = {}
         for doy, value in zip(day_of_year_clean, values_clean):
             month = datetime.strptime(f'2000 {doy}', '%Y %j').month
             if month not in monthly_data:
@@ -385,9 +385,9 @@ class ComparativeAnalyzer(LoggerMixin):
                 'standard_deviations': monthly_stds
             },
             'seasonal_variation_coefficient': float(seasonal_cv),
-            'peak_month': max(monthly_means, key=monthly_means.get),
-            'low_month': min(monthly_means, key=monthly_means.get),
-            'seasonal_amplitude': max(monthly_means.values()) - min(monthly_means.values())
+            'peak_month': int(max(monthly_means.keys(), key=lambda x: float(monthly_means[x]))) if monthly_means else 1,
+            'low_month': int(min(monthly_means.keys(), key=lambda x: float(monthly_means[x]))) if monthly_means else 1,
+            'seasonal_amplitude': float(max(float(v) for v in monthly_means.values()) - min(float(v) for v in monthly_means.values())) if monthly_means else 0.0
         }
     
     def _perform_temporal_tests(self, df: pd.DataFrame) -> Dict[str, Any]:
@@ -448,7 +448,7 @@ class ComparativeAnalyzer(LoggerMixin):
         
         return results
     
-    def _calculate_bray_curtis(self, abundance_matrix: np.ndarray) -> np.ndarray:
+    def _calculate_bray_curtis(self, abundance_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Calculate Bray-Curtis dissimilarity matrix."""
         n_sites = abundance_matrix.shape[0]
         dissimilarity_matrix = np.zeros((n_sites, n_sites))
@@ -468,7 +468,7 @@ class ComparativeAnalyzer(LoggerMixin):
         
         return dissimilarity_matrix
     
-    def _calculate_jaccard_similarity(self, abundance_matrix: np.ndarray) -> np.ndarray:
+    def _calculate_jaccard_similarity(self, abundance_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Calculate Jaccard similarity matrix."""
         presence_matrix = (abundance_matrix > 0).astype(int)
         
@@ -492,7 +492,7 @@ class ComparativeAnalyzer(LoggerMixin):
         
         return similarity_matrix
     
-    def _calculate_sorensen_similarity(self, abundance_matrix: np.ndarray) -> np.ndarray:
+    def _calculate_sorensen_similarity(self, abundance_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Calculate Sorensen similarity matrix."""
         presence_matrix = (abundance_matrix > 0).astype(int)
         
@@ -522,7 +522,7 @@ class ComparativeAnalyzer(LoggerMixin):
         site_names: List[str]
     ) -> Dict[str, Any]:
         """Analyze species turnover between sites."""
-        turnover_results = {
+        turnover_results: Dict[str, Any] = {
             'pairwise_turnover': {},
             'overall_turnover': {},
             'unique_species_per_site': {},
@@ -556,7 +556,7 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _calculate_species_correlations(
         self, 
-        abundance_matrix: np.ndarray, 
+        abundance_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Calculate species correlation matrix."""
@@ -596,13 +596,13 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _analyze_cooccurrence_patterns(
         self, 
-        abundance_matrix: np.ndarray, 
+        abundance_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> Dict[str, Any]:
         """Analyze species co-occurrence patterns."""
         presence_matrix = (abundance_matrix > 0).astype(int)
         
-        cooccurrence_results = {
+        cooccurrence_results: Dict[str, Any] = {
             'cooccurrence_matrix': {},
             'association_strength': {},
             'significant_associations': []
@@ -733,7 +733,7 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _extract_metric_values(self, data_list: List[Dict[str, Any]]) -> Dict[str, List[float]]:
         """Extract metric values from data list."""
-        metrics = {}
+        metrics: Dict[str, List[float]] = {}
         
         for item in data_list:
             if 'diversity_metrics' in item:
@@ -815,7 +815,7 @@ class ComparativeAnalyzer(LoggerMixin):
         return {
             'cohens_d': float(cohens_d),
             'glass_delta': float(glass_delta),
-            'effect_size_interpretation': self._interpret_effect_size(abs(cohens_d))
+            'effect_size_interpretation': self._interpret_effect_size(float(abs(cohens_d)))
         }
     
     def _interpret_effect_size(self, effect_size: float) -> str:
@@ -829,7 +829,7 @@ class ComparativeAnalyzer(LoggerMixin):
         else:
             return "large"
     
-    def _mann_kendall_test(self, data: np.ndarray) -> Dict[str, Any]:
+    def _mann_kendall_test(self, data: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, Any]:
         """Perform Mann-Kendall trend test."""
         n = len(data)
         
@@ -860,7 +860,7 @@ class ComparativeAnalyzer(LoggerMixin):
             'significant': p_value < self.config.significance_level
         }
     
-    def _cumsum_change_detection(self, data: np.ndarray) -> List[Dict[str, Any]]:
+    def _cumsum_change_detection(self, data: np.ndarray[Any, np.dtype[Any]]) -> List[Dict[str, Any]]:
         """Simple change point detection using cumulative sum."""
         n = len(data)
         if n < 10:
@@ -882,7 +882,7 @@ class ComparativeAnalyzer(LoggerMixin):
                         'direction': 'increase' if cumsum[i] > 0 else 'decrease'
                     })
         
-        filtered_change_points = []
+        filtered_change_points: List[Dict[str, Any]] = []
         for cp in sorted(change_points, key=lambda x: x['magnitude'], reverse=True):
             if not any(abs(cp['position'] - fcp['position']) < 5 for fcp in filtered_change_points):
                 filtered_change_points.append(cp)
@@ -891,8 +891,8 @@ class ComparativeAnalyzer(LoggerMixin):
     
     def _find_significant_correlations(
         self, 
-        correlation_matrix: np.ndarray, 
-        p_value_matrix: np.ndarray, 
+        correlation_matrix: np.ndarray[Any, np.dtype[Any]], 
+        p_value_matrix: np.ndarray[Any, np.dtype[Any]], 
         species_names: List[str]
     ) -> List[Dict[str, Any]]:
         """Find significant correlations between species."""
@@ -910,11 +910,11 @@ class ComparativeAnalyzer(LoggerMixin):
                         'species_2': species_names[j]
                     })
         
-        significant_correlations.sort(key=lambda x: abs(x['correlation']), reverse=True)
+        significant_correlations.sort(key=lambda x: abs(float(x['correlation'])), reverse=True)
         
         return significant_correlations
     
-    def _calculate_phi_coefficient(self, contingency_table: np.ndarray) -> float:
+    def _calculate_phi_coefficient(self, contingency_table: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate Phi coefficient for 2x2 contingency table."""
         a, b = contingency_table[0]
         c, d = contingency_table[1]
@@ -925,7 +925,7 @@ class ComparativeAnalyzer(LoggerMixin):
         if denominator == 0:
             return 0.0
         
-        return numerator / denominator
+        return float(numerator / denominator)
     
     def _empty_temporal_comparison(self) -> Dict[str, Any]:
         """Return empty temporal comparison result."""

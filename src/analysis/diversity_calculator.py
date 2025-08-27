@@ -21,9 +21,9 @@ class DiversityConfig:
     coverage_target: float = 0.8
     min_confidence_threshold: float = 0.3
     subsampling_size: int = 30
-    hill_orders: List[float] = None
+    hill_orders: Optional[List[float]] = None
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.hill_orders is None:
             self.hill_orders = [0, 1, 2]
 
@@ -31,7 +31,7 @@ class DiversityConfig:
 class DiversityCalculator(LoggerMixin):
     """Calculate biodiversity metrics from species predictions."""
     
-    def __init__(self, config: DiversityConfig = None):
+    def __init__(self, config: Optional[DiversityConfig] = None):
         """Initialize diversity calculator.
         
         Args:
@@ -69,8 +69,9 @@ class DiversityCalculator(LoggerMixin):
             pielou = 1.0
         
         hill_numbers = {}
-        for q in self.config.hill_orders:
-            hill_numbers[f'hill_q{q}'] = self._calculate_hill_number(proportions, q)
+        if self.config.hill_orders is not None:
+            for q in self.config.hill_orders:
+                hill_numbers[f'hill_q{q}'] = self._calculate_hill_number(proportions, q)
         
         simpson = 1.0 - np.sum(proportions ** 2)
         
@@ -179,15 +180,16 @@ class DiversityCalculator(LoggerMixin):
         if len(species_list) == 0:
             return {}
         
-        bootstrap_results = {
+        bootstrap_results: Dict[str, List[float]] = {
             'species_richness': [],
             'shannon_diversity': [],
             'pielou_evenness': [],
             'simpson_diversity': []
         }
         
-        for q in self.config.hill_orders:
-            bootstrap_results[f'hill_q{q}'] = []
+        if self.config.hill_orders is not None:
+            for q in self.config.hill_orders:
+                bootstrap_results[f'hill_q{q}'] = []
         
         for _ in range(self.config.bootstrap_iterations):
             bootstrap_sample = np.random.choice(
@@ -209,18 +211,18 @@ class DiversityCalculator(LoggerMixin):
         
         for metric_name, values in bootstrap_results.items():
             if values:
-                values = np.array(values)
+                values_array = np.array(values, dtype=np.float64)
                 lower_percentile = (alpha / 2) * 100
                 upper_percentile = (1 - alpha / 2) * 100
                 
-                lower_ci = np.percentile(values, lower_percentile)
-                upper_ci = np.percentile(values, upper_percentile)
+                lower_ci = np.percentile(values_array, lower_percentile)
+                upper_ci = np.percentile(values_array, upper_percentile)
                 
                 confidence_intervals[metric_name] = (float(lower_ci), float(upper_ci))
         
         return confidence_intervals
     
-    def _calculate_hill_number(self, proportions: np.ndarray, q: float) -> float:
+    def _calculate_hill_number(self, proportions: np.ndarray[Any, np.dtype[Any]], q: float) -> float:
         """Calculate Hill number of order q.
         
         Args:
@@ -244,7 +246,7 @@ class DiversityCalculator(LoggerMixin):
             diversity = np.sum(proportions ** q) ** (1 / (1 - q))
             return float(diversity)
     
-    def _interpolate_to_coverage(self, counts: np.ndarray, target_coverage: float) -> np.ndarray:
+    def _interpolate_to_coverage(self, counts: np.ndarray[Any, np.dtype[Any]], target_coverage: float) -> np.ndarray[Any, np.dtype[Any]]:
         """Interpolate species counts to target coverage."""
         total = np.sum(counts)
         f1 = np.sum(counts == 1)
@@ -256,7 +258,7 @@ class DiversityCalculator(LoggerMixin):
         scaling_factor = target_coverage / current_coverage
         return counts * scaling_factor
     
-    def _extrapolate_to_coverage(self, counts: np.ndarray, target_coverage: float) -> np.ndarray:
+    def _extrapolate_to_coverage(self, counts: np.ndarray[Any, np.dtype[Any]], target_coverage: float) -> np.ndarray[Any, np.dtype[Any]]:
         """Extrapolate species counts to target coverage."""
         total = np.sum(counts)
         f1 = np.sum(counts == 1)
@@ -278,7 +280,8 @@ class DiversityCalculator(LoggerMixin):
             'total_individuals': 0
         }
         
-        for q in self.config.hill_orders:
-            metrics[f'hill_q{q}'] = 0.0
+        if self.config.hill_orders is not None:
+            for q in self.config.hill_orders:
+                metrics[f'hill_q{q}'] = 0.0
         
         return metrics

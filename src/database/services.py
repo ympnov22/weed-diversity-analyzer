@@ -143,7 +143,7 @@ class DatabaseService:
         if not daily_summaries:
             return {"total_species": 0, "total_observations": 0, "species_distribution": []}
         
-        all_species_counts = {}
+        all_species_counts: Dict[str, int] = {}
         total_observations = 0
         
         for summary in daily_summaries:

@@ -31,7 +31,7 @@ class QualityAssessor(LoggerMixin):
         """
         self.thresholds = thresholds or QualityThresholds()
     
-    def assess_blur(self, image: np.ndarray) -> float:
+    def assess_blur(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Assess image blur using Laplacian variance.
         
         Args:
@@ -48,7 +48,7 @@ class QualityAssessor(LoggerMixin):
         laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
         return float(laplacian_var)
     
-    def assess_exposure(self, image: np.ndarray) -> Dict[str, float]:
+    def assess_exposure(self, image: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, float]:
         """Assess image exposure characteristics.
         
         Args:
@@ -62,8 +62,8 @@ class QualityAssessor(LoggerMixin):
         else:
             gray = image
         
-        mean_brightness = np.mean(gray)
-        std_brightness = np.std(gray)
+        mean_brightness = float(np.mean(gray.astype(np.float64)))
+        std_brightness = float(np.std(gray.astype(np.float64)))
         
         underexposed = np.sum(gray < 25) / gray.size
         overexposed = np.sum(gray > 230) / gray.size
@@ -81,7 +81,7 @@ class QualityAssessor(LoggerMixin):
             'dynamic_range': float(dynamic_range)
         }
     
-    def assess_noise(self, image: np.ndarray) -> float:
+    def assess_noise(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Assess image noise level.
         
         Args:
@@ -101,7 +101,7 @@ class QualityAssessor(LoggerMixin):
         
         return float(noise_level)
     
-    def assess_contrast(self, image: np.ndarray) -> float:
+    def assess_contrast(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Assess image contrast using standard deviation.
         
         Args:
@@ -115,10 +115,10 @@ class QualityAssessor(LoggerMixin):
         else:
             gray = image
         
-        contrast_score = np.std(gray)
-        return float(contrast_score)
+        contrast_score = float(np.std(gray.astype(np.float64)))
+        return contrast_score
     
-    def assess_sharpness(self, image: np.ndarray) -> float:
+    def assess_sharpness(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Assess image sharpness using gradient magnitude.
         
         Args:
@@ -140,7 +140,7 @@ class QualityAssessor(LoggerMixin):
         
         return float(sharpness_score)
     
-    def assess_swin_compatibility(self, image: np.ndarray) -> Dict[str, float]:
+    def assess_swin_compatibility(self, image: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, float]:
         """Assess image compatibility with Swin Transformer requirements.
         
         Args:
@@ -176,7 +176,7 @@ class QualityAssessor(LoggerMixin):
             ]))
         }
     
-    def _extract_patches(self, image: np.ndarray, patch_size: int = 32) -> np.ndarray:
+    def _extract_patches(self, image: np.ndarray[Any, np.dtype[Any]], patch_size: int = 32) -> np.ndarray[Any, np.dtype[Any]]:
         """Extract patches from image for diversity analysis.
         
         Args:
@@ -200,7 +200,7 @@ class QualityAssessor(LoggerMixin):
         
         return np.array(patches)
     
-    def _calculate_patch_diversity(self, patches: np.ndarray) -> float:
+    def _calculate_patch_diversity(self, patches: np.ndarray[Any, np.dtype[Any]]) -> float:
         """Calculate diversity among image patches.
         
         Args:
@@ -222,10 +222,10 @@ class QualityAssessor(LoggerMixin):
         if not correlations:
             return 0.0
         
-        diversity_score = 1.0 - np.mean(correlations)
+        diversity_score = 1.0 - float(np.mean(correlations))
         return max(0.0, diversity_score)
     
-    def comprehensive_assessment(self, image: np.ndarray) -> Dict[str, Any]:
+    def comprehensive_assessment(self, image: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, Any]:
         """Perform comprehensive quality assessment.
         
         Args:

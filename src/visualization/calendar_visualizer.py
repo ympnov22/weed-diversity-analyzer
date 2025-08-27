@@ -28,7 +28,7 @@ class CalendarConfig:
 class CalendarVisualizer(LoggerMixin):
     """Generate GitHub grass-style calendar visualization for diversity metrics."""
     
-    def __init__(self, config: CalendarConfig = None):
+    def __init__(self, config: Optional[CalendarConfig] = None):
         """Initialize calendar visualizer.
         
         Args:
@@ -44,8 +44,8 @@ class CalendarVisualizer(LoggerMixin):
     def generate_calendar_html(
         self,
         calendar_data: Dict[str, Any],
-        output_path: Path = None,
-        year: int = None
+        output_path: Optional[Path] = None,
+        year: Optional[int] = None
     ) -> str:
         """Generate HTML for GitHub-style calendar visualization.
         
@@ -125,7 +125,7 @@ class CalendarVisualizer(LoggerMixin):
     
     def _generate_calendar_svg(
         self, 
-        data_by_date: Dict[str, Dict], 
+        data_by_date: Dict[str, Dict[str, Any]], 
         year: int, 
         colors: List[str]
     ) -> str:
@@ -369,7 +369,7 @@ class CalendarVisualizer(LoggerMixin):
         }
         """
     
-    def _get_calendar_javascript(self, data_by_date: Dict, metric_name: str) -> str:
+    def _get_calendar_javascript(self, data_by_date: Dict[str, Any], metric_name: str) -> str:
         """Get JavaScript for calendar interactivity."""
         return f"""
         const tooltip = document.getElementById('tooltip');
@@ -426,7 +426,7 @@ class CalendarVisualizer(LoggerMixin):
         }}
         """
     
-    def generate_sample_data(self, year: int = None, num_days: int = 365) -> Dict[str, Any]:
+    def generate_sample_data(self, year: Optional[int] = None, num_days: int = 365) -> Dict[str, Any]:
         """Generate sample calendar data for testing.
         
         Args:

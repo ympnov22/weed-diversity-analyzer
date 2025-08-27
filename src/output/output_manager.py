@@ -13,7 +13,7 @@ from .csv_exporter import CSVExporter
 class OutputManager(LoggerMixin):
     """Manage all output operations for the weed diversity analyzer."""
     
-    def __init__(self, output_base_dir: Path = None):
+    def __init__(self, output_base_dir: Optional[Path] = None):
         """Initialize output manager.
         
         Args:
@@ -31,7 +31,7 @@ class OutputManager(LoggerMixin):
         diversity_metrics: DiversityMetrics,
         prediction_results: List[PredictionResult],
         processing_metadata: Dict[str, Any],
-        confidence_intervals: Optional[Dict[str, tuple]] = None,
+        confidence_intervals: Optional[Dict[str, tuple[float, float]]] = None,
         soft_voting_results: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Path]:
         """Export complete daily analysis results.
@@ -139,7 +139,7 @@ class OutputManager(LoggerMixin):
     def export_visualization_data(
         self,
         daily_summaries: List[Dict[str, Any]],
-        metrics: List[str] = None
+        metrics: Optional[List[str]] = None
     ) -> Dict[str, Path]:
         """Export data specifically formatted for visualization.
         

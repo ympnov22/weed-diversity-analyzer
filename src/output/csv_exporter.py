@@ -14,7 +14,7 @@ from ..utils.data_structures import PredictionResult, SpeciesPrediction
 class CSVExporter(LoggerMixin):
     """Export detailed prediction results to CSV format."""
     
-    def __init__(self, output_dir: Path = None):
+    def __init__(self, output_dir: Optional[Path] = None):
         """Initialize CSV exporter.
         
         Args:
@@ -95,8 +95,8 @@ class CSVExporter(LoggerMixin):
                     confidences = [p.confidence for p in result.predictions]
                     base_row.update({
                         'top_confidence': max(confidences),
-                        'mean_confidence': np.mean(confidences),
-                        'confidence_std': np.std(confidences),
+                        'mean_confidence': float(np.mean(confidences)),
+                        'confidence_std': float(np.std(confidences)),
                         'prediction_entropy': self._calculate_entropy(confidences)
                     })
                 else:
@@ -176,7 +176,7 @@ class CSVExporter(LoggerMixin):
     def export_species_summary(
         self,
         daily_results: Dict[str, List[PredictionResult]],
-        output_filename: str = None
+        output_filename: Optional[str] = None
     ) -> Path:
         """Export species occurrence summary across all days.
         
@@ -188,7 +188,7 @@ class CSVExporter(LoggerMixin):
             Path to the exported CSV file
         """
         try:
-            species_stats = {}
+            species_stats: Dict[str, Dict[str, Any]] = {}
             
             for date_str, prediction_results in daily_results.items():
                 for result in prediction_results:
@@ -223,10 +223,10 @@ class CSVExporter(LoggerMixin):
                     'total_occurrences': stats['total_occurrences'],
                     'days_observed': len(stats['days_observed']),
                     'observation_frequency': len(stats['days_observed']) / len(daily_results),
-                    'average_confidence': np.mean(confidences),
-                    'confidence_std': np.std(confidences),
-                    'min_confidence': np.min(confidences),
-                    'max_confidence': np.max(confidences),
+                    'average_confidence': float(np.mean(confidences)),
+                    'confidence_std': float(np.std(confidences)),
+                    'min_confidence': float(np.min(confidences)),
+                    'max_confidence': float(np.max(confidences)),
                     'first_observed': stats['first_observed'],
                     'last_observed': stats['last_observed']
                 })
