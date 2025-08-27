@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from ..utils.logger import LoggerMixin
 from ..utils.data_structures import PredictionResult, DiversityMetrics
 from .json_exporter import JSONExporter
-from .csv_exporter import CSVExporter
+from .csv_exporter_stub import CSVExporter
 
 
 class OutputManager(LoggerMixin):
