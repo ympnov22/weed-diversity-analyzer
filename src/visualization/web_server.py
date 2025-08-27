@@ -51,18 +51,9 @@ class WebServer(LoggerMixin):
         self.time_series_viz = TimeSeriesVisualizer()
         self.dashboard_gen = DashboardGenerator()
         
-        try:
-            config_manager = ConfigManager()
-            self.model_manager = ModelManager(config_manager)
-            self.model_loaded = self.model_manager.load_models()
-            if self.model_loaded:
-                self.logger.info("iNatAg models loaded successfully")
-            else:
-                self.logger.warning("Failed to load iNatAg models")
-        except Exception as e:
-            self.logger.error(f"Model initialization failed: {e}")
-            self.model_manager = None
-            self.model_loaded = False
+        self.logger.info("Minimal mode - all model loading disabled for memory optimization")
+        self.model_manager = None
+        self.model_loaded = False
         
         self.static_dir = Path(__file__).parent / "static"
         self.static_dir.mkdir(exist_ok=True)

@@ -1,42 +1,62 @@
-# Multi-stage build for weed diversity analyzer
-FROM python:3.12-slim as base
+# Lightweight Alpine-based build for minimal memory footprint
+FROM python:3.12-alpine as builder
+
+# Set environment variables for build stage
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install minimal build dependencies
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    postgresql-dev
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy minimal requirements and install Python dependencies
+COPY requirements-minimal.txt .
+RUN pip install --no-cache-dir -r requirements-minimal.txt
+
+# Production stage
+FROM python:3.12-alpine as production
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PATH="/opt/venv/bin:$PATH"
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+# Install only runtime dependencies
+RUN apk add --no-cache \
+    postgresql-libs \
+    curl
 
-# Create app directory
+# Copy virtual environment from builder stage
+COPY --from=builder /opt/venv /opt/venv
+
+# Create app directory and user
 WORKDIR /app
+RUN adduser -D -s /bin/sh appuser
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy only essential application files
+COPY --chown=appuser:appuser app.py .
+COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser config/ ./config/ 2>/dev/null || true
 
-# Copy application code
-COPY . .
+# Create minimal necessary directories
+RUN mkdir -p logs temp \
+    && chown -R appuser:appuser /app
 
-# Create necessary directories
-RUN mkdir -p data/models data/raw data/processed output logs temp
-
-# Set proper permissions
-RUN chmod +x /app
+# Switch to non-root user
+USER appuser
 
 # Expose port
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/status || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Run the application
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
