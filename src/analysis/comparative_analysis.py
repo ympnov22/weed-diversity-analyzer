@@ -815,7 +815,7 @@ class ComparativeAnalyzer(LoggerMixin):
         return {
             'cohens_d': float(cohens_d),
             'glass_delta': float(glass_delta),
-            'effect_size_interpretation': self._interpret_effect_size(abs(cohens_d))
+            'effect_size_interpretation': self._interpret_effect_size(float(abs(cohens_d)))
         }
     
     def _interpret_effect_size(self, effect_size: float) -> str:
