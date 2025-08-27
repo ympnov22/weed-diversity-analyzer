@@ -34,7 +34,8 @@ class iNatAgModel(BaseModel):
         self.model_size = model_size
         self.repo_id = "Project-AgML/iNatAg-models"
         self.num_classes = 2959
-        self.device = None
+        self.device: Optional[torch.device] = None
+        self.model: Optional[nn.Module] = None
         
     def _get_device(self) -> torch.device:
         """Get appropriate device for model."""
