@@ -15,7 +15,7 @@ from ..analysis.diversity_calculator import DiversityCalculator
 class JSONExporter(LoggerMixin):
     """Export diversity analysis results to JSON format."""
     
-    def __init__(self, output_dir: Path = None):
+    def __init__(self, output_dir: Optional[Path] = None):
         """Initialize JSON exporter.
         
         Args:
