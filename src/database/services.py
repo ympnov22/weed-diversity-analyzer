@@ -136,6 +136,45 @@ class DatabaseService:
             AnalysisSessionModel.user_id == user_id
         ).order_by(desc(AnalysisSessionModel.created_at)).all()
     
+    def store_upload_result(
+        self,
+        session_id: int,
+        filename: str,
+        file_path: str,
+        predictions: List[Dict[str, Any]],
+        processing_time: float,
+        model_info: Dict[str, Any]
+    ) -> int:
+        """Store upload analysis result in database."""
+        from datetime import datetime
+        
+        image_data = ImageDataModel(
+            session_id=session_id,
+            path=file_path,
+            date=datetime.now(),
+            width=0,  # Would need to extract from image
+            height=0,
+            file_size_bytes=0,
+            is_processed=True,
+            is_representative=True
+        )
+        self.db.add(image_data)
+        self.db.flush()
+        
+        prediction_result = PredictionResultModel(
+            image_data_id=image_data.id,
+            model_name=model_info.get("model_name", "inatag_swin_base"),
+            processing_time=processing_time,
+            predictions=predictions,
+            top_prediction_species=predictions[0]["species_name"] if predictions else None,
+            top_prediction_confidence=predictions[0]["confidence"] if predictions else 0.0,
+            mean_confidence=sum(p["confidence"] for p in predictions) / len(predictions) if predictions else 0.0
+        )
+        self.db.add(prediction_result)
+        self.db.commit()
+        
+        return int(image_data.id)
+
     def get_species_dashboard_data(self, user_id: int) -> Dict[str, Any]:
         """Get species dashboard data for visualization."""
         daily_summaries = self.get_daily_summaries(user_id)
