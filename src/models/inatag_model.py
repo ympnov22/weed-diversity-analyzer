@@ -199,12 +199,15 @@ class iNatAgModel(BaseModel):
             batch_tensor = batch_tensor.to(self._get_device())
             
             with torch.no_grad():
-                outputs = self.model(batch_tensor)
-                if isinstance(outputs, tuple):
-                    outputs = outputs[0]
-                
-                probabilities = torch.softmax(outputs, dim=1)
-                raw_outputs = probabilities.cpu().numpy()
+                if self.model is not None:
+                    outputs = self.model(batch_tensor)
+                    if isinstance(outputs, tuple):
+                        outputs = outputs[0]
+                    
+                    probabilities = torch.softmax(outputs, dim=1)
+                    raw_outputs = probabilities.cpu().numpy()
+                else:
+                    raise RuntimeError("Model is not loaded")
             
             results = []
             processing_time = (time.time() - start_time) / len(batch)
