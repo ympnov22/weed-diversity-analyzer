@@ -29,3 +29,6 @@ plotly>=5.15.0
 
 # Scientific computing (required by diversity_calculator)
 scipy>=1.11.0
+
+# Machine learning (required by comparative_analysis)
+scikit-learn>=1.3.0
