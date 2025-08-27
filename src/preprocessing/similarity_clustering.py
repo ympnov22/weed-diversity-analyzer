@@ -26,9 +26,9 @@ class ClusteringConfig:
     max_features: int = 500
     
     hist_bins: int = 256
-    hist_channels: List[int] = None  # None means all channels
+    hist_channels: Optional[List[int]] = None  # None means all channels
     
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.hist_channels is None:
             self.hist_channels = [0, 1, 2]  # BGR channels
 

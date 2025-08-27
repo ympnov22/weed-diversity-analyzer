@@ -387,7 +387,7 @@ class ComparativeAnalyzer(LoggerMixin):
             'seasonal_variation_coefficient': float(seasonal_cv),
             'peak_month': int(max(monthly_means.keys(), key=lambda x: float(monthly_means[x]))),
             'low_month': int(min(monthly_means.keys(), key=lambda x: float(monthly_means[x]))),
-            'seasonal_amplitude': float(max(monthly_means.values()) - min(monthly_means.values()))
+            'seasonal_amplitude': float(max(monthly_means.values()) - min(monthly_means.values())) if monthly_means else 0.0
         }
     
     def _perform_temporal_tests(self, df: pd.DataFrame) -> Dict[str, Any]:
