@@ -30,7 +30,7 @@ class JSONExporter(LoggerMixin):
         diversity_metrics: DiversityMetrics,
         prediction_results: List[PredictionResult],
         processing_metadata: Dict[str, Any],
-        confidence_intervals: Optional[Dict[str, tuple]] = None
+        confidence_intervals: Optional[Dict[str, tuple[float, float]]] = None
     ) -> Dict[str, Any]:
         """Export daily diversity summary to JSON.
         
@@ -172,7 +172,7 @@ class JSONExporter(LoggerMixin):
     def _extract_top_species(self, prediction_results: List[PredictionResult], top_k: int = 10) -> List[Dict[str, Any]]:
         """Extract top species from prediction results."""
         species_counts = {}
-        species_confidences = {}
+        species_confidences: Dict[str, List[float]] = {}
         
         for result in prediction_results:
             for prediction in result.predictions:
@@ -238,9 +238,9 @@ class JSONExporter(LoggerMixin):
         else:
             return {}
     
-    def _extract_diversity_trends(self, daily_summaries: List[Dict[str, Any]]) -> Dict[str, List[float]]:
+    def _extract_diversity_trends(self, daily_summaries: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
         """Extract diversity metric trends over time."""
-        trends = {
+        trends: Dict[str, List[Any]] = {
             "dates": [],
             "species_richness": [],
             "shannon_diversity": [],
@@ -276,9 +276,9 @@ class JSONExporter(LoggerMixin):
             "daily_species_counts": [len(day_species) for day_species in daily_species]
         }
     
-    def _extract_processing_trends(self, daily_summaries: List[Dict[str, Any]]) -> Dict[str, List[float]]:
+    def _extract_processing_trends(self, daily_summaries: List[Dict[str, Any]]) -> Dict[str, List[Any]]:
         """Extract processing-related trends."""
-        trends = {
+        trends: Dict[str, List[Any]] = {
             "dates": [],
             "processing_times": [],
             "image_counts": [],
@@ -368,7 +368,7 @@ class JSONExporter(LoggerMixin):
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False, default=self._json_serializer)
     
-    def _json_serializer(self, obj):
+    def _json_serializer(self, obj: Any) -> Any:
         """Custom JSON serializer for numpy types and other objects."""
         if isinstance(obj, np.integer):
             return int(obj)
