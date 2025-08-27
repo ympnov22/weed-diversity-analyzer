@@ -1,7 +1,7 @@
 """Advanced image quality assessment for preprocessing pipeline."""
 
 import cv2
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
 from dataclasses import dataclass
@@ -31,7 +31,7 @@ class QualityAssessor(LoggerMixin):
         """
         self.thresholds = thresholds or QualityThresholds()
     
-    def assess_blur(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def assess_blur(self, image) -> float:
         """Assess image blur using Laplacian variance.
         
         Args:
@@ -48,7 +48,7 @@ class QualityAssessor(LoggerMixin):
         laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
         return float(laplacian_var)
     
-    def assess_exposure(self, image: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, float]:
+    def assess_exposure(self, image) -> Dict[str, float]:
         """Assess image exposure characteristics.
         
         Args:
@@ -62,15 +62,17 @@ class QualityAssessor(LoggerMixin):
         else:
             gray = image
         
-        mean_brightness = float(np.mean(gray.astype(np.float64)))
-        std_brightness = float(np.std(gray.astype(np.float64)))
+        import statistics
+        gray_flat = gray.flatten()
+        mean_brightness = float(statistics.mean(gray_flat))
+        std_brightness = float(statistics.stdev(gray_flat)) if len(gray_flat) > 1 else 0.0
         
-        underexposed = np.sum(gray < 25) / gray.size
-        overexposed = np.sum(gray > 230) / gray.size
+        underexposed = sum(1 for pixel in gray_flat if pixel < 25) / len(gray_flat)
+        overexposed = sum(1 for pixel in gray_flat if pixel > 230) / len(gray_flat)
         
         exposure_score = 1.0 - (underexposed + overexposed)
         
-        dynamic_range = np.max(gray) - np.min(gray)
+        dynamic_range = max(gray_flat) - min(gray_flat)
         
         return {
             'mean_brightness': float(mean_brightness),
@@ -81,7 +83,7 @@ class QualityAssessor(LoggerMixin):
             'dynamic_range': float(dynamic_range)
         }
     
-    def assess_noise(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def assess_noise(self, image) -> float:
         """Assess image noise level.
         
         Args:
@@ -96,12 +98,15 @@ class QualityAssessor(LoggerMixin):
             gray = image
         
         median_filtered = cv2.medianBlur(gray, 5)
-        noise = np.abs(gray.astype(np.float32) - median_filtered.astype(np.float32))
-        noise_level = np.mean(noise) / 255.0
+        noise_values = []
+        for i in range(gray.shape[0]):
+            for j in range(gray.shape[1]):
+                noise_values.append(abs(float(gray[i,j]) - float(median_filtered[i,j])))
+        noise_level = sum(noise_values) / len(noise_values) / 255.0
         
         return float(noise_level)
     
-    def assess_contrast(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def assess_contrast(self, image) -> float:
         """Assess image contrast using standard deviation.
         
         Args:
@@ -115,10 +120,12 @@ class QualityAssessor(LoggerMixin):
         else:
             gray = image
         
-        contrast_score = float(np.std(gray.astype(np.float64)))
+        import statistics
+        gray_flat = gray.flatten()
+        contrast_score = float(statistics.stdev(gray_flat)) if len(gray_flat) > 1 else 0.0
         return contrast_score
     
-    def assess_sharpness(self, image: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def assess_sharpness(self, image) -> float:
         """Assess image sharpness using gradient magnitude.
         
         Args:
@@ -135,8 +142,13 @@ class QualityAssessor(LoggerMixin):
         grad_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
         grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
         
-        gradient_magnitude = np.sqrt(grad_x**2 + grad_y**2)
-        sharpness_score = np.mean(gradient_magnitude)
+        import math
+        gradient_values = []
+        for i in range(grad_x.shape[0]):
+            for j in range(grad_x.shape[1]):
+                magnitude = math.sqrt(grad_x[i,j]**2 + grad_y[i,j]**2)
+                gradient_values.append(magnitude)
+        sharpness_score = sum(gradient_values) / len(gradient_values)
         
         return float(sharpness_score)
     

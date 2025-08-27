@@ -1,6 +1,6 @@
 """Sample size correction and subsampling methods."""
 
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from typing import List, Dict, Any, Optional, Tuple
 from collections import Counter
 import random
@@ -93,14 +93,17 @@ class SampleCorrection(LoggerMixin):
         
         for metric_name, values in bootstrap_results.items():
             if values:
-                values_array = np.array(values)
-                mean_metrics[metric_name] = float(np.mean(values_array))
+                mean_metrics[metric_name] = sum(values) / len(values)
                 
                 lower_percentile = (alpha / 2) * 100
                 upper_percentile = (1 - alpha / 2) * 100
                 
-                lower_ci = np.percentile(values_array, lower_percentile)
-                upper_ci = np.percentile(values_array, upper_percentile)
+                sorted_values = sorted(values)
+                n = len(sorted_values)
+                lower_idx = int(lower_percentile * n / 100)
+                upper_idx = int(upper_percentile * n / 100)
+                lower_ci = sorted_values[min(lower_idx, n-1)]
+                upper_ci = sorted_values[min(upper_idx, n-1)]
                 
                 confidence_intervals[metric_name] = (float(lower_ci), float(upper_ci))
         
@@ -151,12 +154,16 @@ class SampleCorrection(LoggerMixin):
                 richness_values.append(unique_species)
             
             if richness_values:
-                mean_rich = np.mean(richness_values)
+                mean_rich = sum(richness_values) / len(richness_values)
                 mean_richness.append(float(mean_rich))
                 
                 alpha = 1 - self.config.confidence_level
-                lower_ci = np.percentile(richness_values, (alpha / 2) * 100)
-                upper_ci = np.percentile(richness_values, (1 - alpha / 2) * 100)
+                sorted_richness = sorted(richness_values)
+                n = len(sorted_richness)
+                lower_idx = int((alpha / 2) * 100 * n / 100)
+                upper_idx = int((1 - alpha / 2) * 100 * n / 100)
+                lower_ci = sorted_richness[min(lower_idx, n-1)]
+                upper_ci = sorted_richness[min(upper_idx, n-1)]
                 confidence_intervals.append((float(lower_ci), float(upper_ci)))
             else:
                 mean_richness.append(0.0)
@@ -255,21 +262,37 @@ class SampleCorrection(LoggerMixin):
         summary = {}
         for metric_name, values in diversity_values.items():
             if values:
+                import math
+                mean_val = sum(values) / len(values)
+                variance = sum((x - mean_val) ** 2 for x in values) / len(values)
+                std_val = math.sqrt(variance)
+                sorted_vals = sorted(values)
+                n = len(sorted_vals)
+                median_val = sorted_vals[n // 2] if n % 2 == 1 else (sorted_vals[n // 2 - 1] + sorted_vals[n // 2]) / 2
+                
                 summary[metric_name] = {
-                    'mean': float(np.mean(values)),
-                    'std': float(np.std(values)),
-                    'min': float(np.min(values)),
-                    'max': float(np.max(values)),
-                    'median': float(np.median(values))
+                    'mean': float(mean_val),
+                    'std': float(std_val),
+                    'min': float(min(values)),
+                    'max': float(max(values)),
+                    'median': float(median_val)
                 }
         
         original_sizes_list = list(original_sizes.values())
+        import math
+        mean_size = sum(original_sizes_list) / len(original_sizes_list)
+        variance_size = sum((x - mean_size) ** 2 for x in original_sizes_list) / len(original_sizes_list)
+        std_size = math.sqrt(variance_size)
+        sorted_sizes = sorted(original_sizes_list)
+        n = len(sorted_sizes)
+        median_size = sorted_sizes[n // 2] if n % 2 == 1 else (sorted_sizes[n // 2 - 1] + sorted_sizes[n // 2]) / 2
+        
         summary['sample_sizes'] = {
-            'mean': float(np.mean(original_sizes_list)),
-            'std': float(np.std(original_sizes_list)),
-            'min': int(np.min(original_sizes_list)),
-            'max': int(np.max(original_sizes_list)),
-            'median': float(np.median(original_sizes_list))
+            'mean': float(mean_size),
+            'std': float(std_size),
+            'min': int(min(original_sizes_list)),
+            'max': int(max(original_sizes_list)),
+            'median': float(median_size)
         }
         
         return summary

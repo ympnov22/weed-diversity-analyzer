@@ -1,7 +1,7 @@
 """Image preprocessing module for quality enhancement and normalization."""
 
 import cv2
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from pathlib import Path
 from typing import Tuple, Optional, Dict, Any
 from dataclasses import dataclass
@@ -48,7 +48,7 @@ class ImageProcessor(LoggerMixin):
                 tileGridSize=self.config.clahe_tile_grid_size
             )
     
-    def load_image(self, image_path: Path) -> Optional[np.ndarray[Any, np.dtype[Any]]]:
+    def load_image(self, image_path: Path) -> Optional[Any]:
         """Load image from file path.
         
         Args:
@@ -70,7 +70,7 @@ class ImageProcessor(LoggerMixin):
             self.logger.error(f"Error loading image {image_path}: {e}")
             return None
     
-    def assess_image_quality(self, image: np.ndarray[Any, np.dtype[Any]]) -> Dict[str, float]:
+    def assess_image_quality(self, image: Any) -> Dict[str, float]:
         """Assess image quality metrics.
         
         Args:
@@ -83,12 +83,12 @@ class ImageProcessor(LoggerMixin):
         
         blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
         
-        brightness_mean = float(np.mean(gray.astype(np.float64)))
+        brightness_mean = float(gray.mean())
         
-        contrast_std = float(np.std(gray.astype(np.float64)))
+        contrast_std = float(gray.std())
         
-        underexposed = np.sum(gray < 25) / gray.size
-        overexposed = np.sum(gray > 230) / gray.size
+        underexposed = (gray < 25).sum() / gray.size
+        overexposed = (gray > 230).sum() / gray.size
         exposure_score = 1.0 - (underexposed + overexposed)
         
         return {
@@ -100,7 +100,7 @@ class ImageProcessor(LoggerMixin):
             'overexposed_ratio': float(overexposed)
         }
     
-    def apply_clahe(self, image: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def apply_clahe(self, image: Any) -> Any:
         """Apply Contrast Limited Adaptive Histogram Equalization.
         
         Args:
@@ -121,7 +121,7 @@ class ImageProcessor(LoggerMixin):
         self.logger.debug("Applied CLAHE enhancement")
         return enhanced
     
-    def apply_white_balance(self, image: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def apply_white_balance(self, image: Any) -> Any:
         """Apply white balance correction.
         
         Args:
@@ -141,7 +141,7 @@ class ImageProcessor(LoggerMixin):
             self.logger.warning(f"Unknown white balance method: {self.config.white_balance_method}")
             return image
     
-    def _gray_world_white_balance(self, image: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def _gray_world_white_balance(self, image: Any) -> Any:
         """Apply gray world white balance assumption.
         
         Args:
@@ -150,9 +150,9 @@ class ImageProcessor(LoggerMixin):
         Returns:
             White-balanced image
         """
-        mean_b = np.mean(image[:, :, 0])
-        mean_g = np.mean(image[:, :, 1])
-        mean_r = np.mean(image[:, :, 2])
+        mean_b = image[:, :, 0].mean()
+        mean_g = image[:, :, 1].mean()
+        mean_r = image[:, :, 2].mean()
         
         overall_mean = (mean_b + mean_g + mean_r) / 3
         
@@ -160,6 +160,7 @@ class ImageProcessor(LoggerMixin):
         scale_g = overall_mean / mean_g if mean_g > 0 else 1.0
         scale_r = overall_mean / mean_r if mean_r > 0 else 1.0
         
+        import numpy as np  # Local import for this operation
         balanced = image.astype(np.float32)
         balanced[:, :, 0] *= scale_b
         balanced[:, :, 1] *= scale_g
@@ -170,7 +171,7 @@ class ImageProcessor(LoggerMixin):
         self.logger.debug(f"Applied gray world white balance (scales: B={scale_b:.3f}, G={scale_g:.3f}, R={scale_r:.3f})")
         return balanced
     
-    def _white_patch_white_balance(self, image: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def _white_patch_white_balance(self, image: Any) -> Any:
         """Apply white patch white balance assumption.
         
         Args:
@@ -179,14 +180,15 @@ class ImageProcessor(LoggerMixin):
         Returns:
             White-balanced image
         """
-        max_b = np.max(image[:, :, 0])
-        max_g = np.max(image[:, :, 1])
-        max_r = np.max(image[:, :, 2])
+        max_b = image[:, :, 0].max()
+        max_g = image[:, :, 1].max()
+        max_r = image[:, :, 2].max()
         
         scale_b = 255.0 / max_b if max_b > 0 else 1.0
         scale_g = 255.0 / max_g if max_g > 0 else 1.0
         scale_r = 255.0 / max_r if max_r > 0 else 1.0
         
+        import numpy as np  # Local import for this operation
         balanced = image.astype(np.float32)
         balanced[:, :, 0] *= scale_b
         balanced[:, :, 1] *= scale_g
@@ -197,7 +199,7 @@ class ImageProcessor(LoggerMixin):
         self.logger.debug(f"Applied white patch white balance (scales: B={scale_b:.3f}, G={scale_g:.3f}, R={scale_r:.3f})")
         return balanced
     
-    def apply_gamma_correction(self, image: np.ndarray[Any, np.dtype[Any]], gamma: Optional[float] = None) -> np.ndarray[Any, np.dtype[Any]]:
+    def apply_gamma_correction(self, image: Any, gamma: Optional[float] = None) -> Any:
         """Apply gamma correction for exposure adjustment.
         
         Args:
@@ -212,7 +214,8 @@ class ImageProcessor(LoggerMixin):
         
         if gamma is None:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            mean_brightness = float(np.mean(gray.astype(np.float64))) / 255.0
+            import numpy as np  # Local import for this operation
+            mean_brightness = float(gray.astype(np.float64).mean()) / 255.0
             
             if mean_brightness < 0.3:  # Dark image
                 gamma = np.random.uniform(0.8, 1.0)
@@ -222,6 +225,7 @@ class ImageProcessor(LoggerMixin):
                 gamma = np.random.uniform(*self.config.gamma_range)
         
         inv_gamma = 1.0 / gamma
+        import numpy as np  # Local import for this operation
         table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype(np.uint8)
         
         corrected = cv2.LUT(image, table)
@@ -229,7 +233,7 @@ class ImageProcessor(LoggerMixin):
         self.logger.debug(f"Applied gamma correction (gamma={gamma:.3f})")
         return corrected
     
-    def resize_image(self, image: np.ndarray[Any, np.dtype[Any]], target_size: Optional[Tuple[int, int]] = None) -> np.ndarray[Any, np.dtype[Any]]:
+    def resize_image(self, image: Any, target_size: Optional[Tuple[int, int]] = None) -> Any:
         """Resize image to target size.
         
         Args:
@@ -246,7 +250,7 @@ class ImageProcessor(LoggerMixin):
         self.logger.debug(f"Resized image to {target_size}")
         return resized
     
-    def normalize_image(self, image: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def normalize_image(self, image: Any) -> Any:
         """Normalize image to [0, 1] range.
         
         Args:
@@ -255,10 +259,11 @@ class ImageProcessor(LoggerMixin):
         Returns:
             Normalized image (0-1 range)
         """
+        import numpy as np  # Local import for this operation
         normalized = image.astype(np.float32) / 255.0
         return normalized
     
-    def process_image(self, image_path: Path, save_intermediate: bool = False) -> Optional[Tuple[np.ndarray[Any, np.dtype[Any]], Dict[str, Any]]]:
+    def process_image(self, image_path: Path, save_intermediate: bool = False) -> Optional[Tuple[Any, Dict[str, Any]]]:
         """Complete image preprocessing pipeline.
         
         Args:

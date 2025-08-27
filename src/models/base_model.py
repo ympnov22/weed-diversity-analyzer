@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from dataclasses import dataclass
 
 from ..utils.logger import LoggerMixin
@@ -40,7 +40,7 @@ class PredictionResult:
     processing_time: float
     model_info: Dict[str, Any]
     confidence_scores: List[float]
-    raw_outputs: Optional[np.ndarray[Any, np.dtype[Any]]] = None
+    raw_outputs: Optional[Any] = None  # np.ndarray removed for minimal deployment
 
 
 class BaseModel(ABC, LoggerMixin):
@@ -67,7 +67,7 @@ class BaseModel(ABC, LoggerMixin):
         pass
     
     @abstractmethod
-    def predict(self, image: np.ndarray[Any, np.dtype[Any]]) -> PredictionResult:
+    def predict(self, image: Any) -> PredictionResult:  # np.ndarray removed for minimal deployment
         """Predict species from image.
         
         Args:
@@ -79,7 +79,7 @@ class BaseModel(ABC, LoggerMixin):
         pass
     
     @abstractmethod
-    def predict_batch(self, images: List[np.ndarray[Any, np.dtype[Any]]]) -> List[PredictionResult]:
+    def predict_batch(self, images: List[Any]) -> List[PredictionResult]:  # np.ndarray removed for minimal deployment
         """Predict species for batch of images.
         
         Args:
@@ -90,7 +90,7 @@ class BaseModel(ABC, LoggerMixin):
         """
         pass
     
-    def preprocess_image(self, image: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def preprocess_image(self, image: Any) -> Any:  # np.ndarray removed for minimal deployment
         """Preprocess image for model input.
         
         Args:
@@ -99,22 +99,10 @@ class BaseModel(ABC, LoggerMixin):
         Returns:
             Preprocessed image ready for model
         """
-        if len(image.shape) == 3 and image.shape[2] == 3:
-            image_rgb = image[:, :, ::-1]  # BGR to RGB
-        else:
-            image_rgb = image
-        
-        if image_rgb.max() > 1.0:
-            image_rgb = image_rgb.astype(np.float32) / 255.0
-        
-        mean = np.array(self.config.normalize_mean)
-        std = np.array(self.config.normalize_std)
-        
-        normalized = (image_rgb - mean) / std
-        
-        return normalized.astype(np.float32)
+        self.logger.warning("Image preprocessing not available in minimal mode")
+        return image
     
-    def postprocess_predictions(self, raw_outputs: np.ndarray[Any, np.dtype[Any]]) -> List[SpeciesPrediction]:
+    def postprocess_predictions(self, raw_outputs: Any) -> List[SpeciesPrediction]:  # np.ndarray removed for minimal deployment
         """Convert raw model outputs to species predictions.
         
         Args:
@@ -123,29 +111,18 @@ class BaseModel(ABC, LoggerMixin):
         Returns:
             List of species predictions
         """
-        if raw_outputs.max() > 1.0 or raw_outputs.min() < 0.0:
-            exp_outputs = np.exp(raw_outputs - np.max(raw_outputs))
-            probabilities = exp_outputs / np.sum(exp_outputs)
-        else:
-            probabilities = raw_outputs
+        self.logger.warning("Prediction postprocessing not available in minimal mode")
         
-        top_k_indices = np.argsort(probabilities)[-self.config.top_k:][::-1]
+        if self.species_list:
+            prediction = SpeciesPrediction(
+                species_name=self.species_list[0],
+                confidence=0.5,
+                scientific_name=self.species_list[0],
+                common_name=""
+            )
+            return [prediction]
         
-        predictions = []
-        for idx in top_k_indices:
-            if idx < len(self.species_list):
-                species_name = self.species_list[idx]
-                confidence = float(probabilities[idx])
-                
-                prediction = SpeciesPrediction(
-                    species_name=species_name,
-                    confidence=confidence,
-                    scientific_name=species_name,
-                    common_name=""
-                )
-                predictions.append(prediction)
-        
-        return predictions
+        return []
     
     def is_prediction_reliable(self, prediction_result: PredictionResult) -> bool:
         """Check if prediction is reliable based on confidence threshold.

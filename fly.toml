@@ -28,17 +28,17 @@ primary_region = "nrt"  # Tokyo region for Japan
   tls_skip_verify = false
 
 [machine]
-  memory = "512mb"
+  memory = "4gb"
   cpu_kind = "shared"
-  cpus = 1
+  cpus = 2
 
-[[mounts]]
-  source = "weed_data"
-  destination = "/app/data"
+# [[mounts]]
+#   source = "weed_data"
+#   destination = "/app/data"
 
-[[mounts]]
-  source = "weed_output"
-  destination = "/app/output"
+# [[mounts]]
+#   source = "weed_output"
+#   destination = "/app/output"
 
-[deploy]
-  release_command = "python -c 'from src.database.migrate import run_migrations; run_migrations()'"
+# [deploy]
+#   release_command = "python -c 'from src.database.migrate import run_migrations; run_migrations()'"

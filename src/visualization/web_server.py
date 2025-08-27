@@ -20,9 +20,9 @@ from ..auth.dependencies import require_auth, optional_auth
 from ..database.models import UserModel
 from ..models.model_manager import ModelManager
 from ..utils.config import ConfigManager
-from .calendar_visualizer import CalendarVisualizer
-from .time_series_visualizer import TimeSeriesVisualizer
-from .dashboard_generator import DashboardGenerator
+from .calendar_visualizer_stub import CalendarVisualizer
+from .time_series_visualizer_stub import TimeSeriesVisualizer
+from .dashboard_generator_stub import DashboardGenerator
 
 
 class WebServer(LoggerMixin):
@@ -51,18 +51,9 @@ class WebServer(LoggerMixin):
         self.time_series_viz = TimeSeriesVisualizer()
         self.dashboard_gen = DashboardGenerator()
         
-        try:
-            config_manager = ConfigManager()
-            self.model_manager = ModelManager(config_manager)
-            self.model_loaded = self.model_manager.load_models()
-            if self.model_loaded:
-                self.logger.info("iNatAg models loaded successfully")
-            else:
-                self.logger.warning("Failed to load iNatAg models")
-        except Exception as e:
-            self.logger.error(f"Model initialization failed: {e}")
-            self.model_manager = None
-            self.model_loaded = False
+        self.logger.info("Minimal mode - all model loading disabled for memory optimization")
+        self.model_manager = None
+        self.model_loaded = False
         
         self.static_dir = Path(__file__).parent / "static"
         self.static_dir.mkdir(exist_ok=True)
@@ -235,7 +226,7 @@ class WebServer(LoggerMixin):
         @self.app.get("/comparative-analysis", response_class=HTMLResponse)
         async def comparative_analysis():
             try:
-                from ..analysis.comparative_analysis import ComparativeAnalyzer
+                from ..analysis.comparative_analysis_stub import ComparativeAnalyzer
                 analyzer = ComparativeAnalyzer()
                 
                 sample_data = self._generate_sample_daily_summaries()
@@ -250,7 +241,7 @@ class WebServer(LoggerMixin):
         @self.app.get("/functional-diversity", response_class=HTMLResponse)
         async def functional_diversity():
             try:
-                from ..analysis.functional_diversity import FunctionalDiversityAnalyzer
+                from ..analysis.functional_diversity_stub import FunctionalDiversityAnalyzerStub as FunctionalDiversityAnalyzer
                 analyzer = FunctionalDiversityAnalyzer()
                 
                 species_list = ["Taraxacum officinale", "Plantago major", "Trifolium repens", "Poa annua"]

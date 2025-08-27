@@ -1,7 +1,7 @@
 """CSV output exporter for detailed prediction results."""
 
 import csv
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional
@@ -95,8 +95,8 @@ class CSVExporter(LoggerMixin):
                     confidences = [p.confidence for p in result.predictions]
                     base_row.update({
                         'top_confidence': max(confidences),
-                        'mean_confidence': float(np.mean(confidences)),
-                        'confidence_std': float(np.std(confidences)),
+                        'mean_confidence': sum(confidences) / len(confidences),
+                        'confidence_std': self._calculate_std(confidences),
                         'prediction_entropy': self._calculate_entropy(confidences)
                     })
                 else:
@@ -223,10 +223,10 @@ class CSVExporter(LoggerMixin):
                     'total_occurrences': stats['total_occurrences'],
                     'days_observed': len(stats['days_observed']),
                     'observation_frequency': len(stats['days_observed']) / len(daily_results),
-                    'average_confidence': float(np.mean(confidences)),
-                    'confidence_std': float(np.std(confidences)),
-                    'min_confidence': float(np.min(confidences)),
-                    'max_confidence': float(np.max(confidences)),
+                    'average_confidence': sum(confidences) / len(confidences),
+                    'confidence_std': self._calculate_std(confidences),
+                    'min_confidence': min(confidences),
+                    'max_confidence': max(confidences),
                     'first_observed': stats['first_observed'],
                     'last_observed': stats['last_observed']
                 })
@@ -327,9 +327,19 @@ class CSVExporter(LoggerMixin):
         
         probabilities = [c / total for c in confidences]
         
+        import math
         entropy = 0.0
         for p in probabilities:
             if p > 0:
-                entropy -= p * np.log2(p)
+                entropy -= p * math.log2(p)
         
         return entropy
+    
+    def _calculate_std(self, values: List[float]) -> float:
+        """Calculate standard deviation without numpy."""
+        if len(values) <= 1:
+            return 0.0
+        
+        mean = sum(values) / len(values)
+        variance = sum((x - mean) ** 2 for x in values) / (len(values) - 1)
+        return variance ** 0.5

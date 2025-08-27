@@ -1,8 +1,6 @@
 """LoRA fine-tuning system for Hokkaido field adaptation."""
 
-import torch
-from peft import LoraConfig, get_peft_model, TaskType, PeftModel
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 import time
@@ -34,6 +32,8 @@ class LoRATrainer(LoggerMixin):
     def setup_lora_model(self) -> bool:
         """Setup LoRA adapter on base model."""
         try:
+            from peft import LoraConfig, get_peft_model, TaskType
+            
             if not self.base_model.is_loaded:
                 self.logger.error("Base model must be loaded before setting up LoRA")
                 return False
@@ -56,7 +56,7 @@ class LoRATrainer(LoggerMixin):
             self.logger.error(f"Failed to setup LoRA model: {e}")
             return False
     
-    def prepare_training_data(self, image_paths: List[Path], labels: List[int]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def prepare_training_data(self, image_paths: List[Path], labels: List[int]) -> Tuple[Any, Any]:
         """Prepare training data for LoRA fine-tuning.
         
         Args:
@@ -83,16 +83,17 @@ class LoRATrainer(LoggerMixin):
         if not images:
             raise ValueError("No valid images found for training")
         
-        images_tensor = torch.from_numpy(np.stack(images)).float()
+        import torch
+        images_tensor = torch.stack([torch.from_numpy(img) for img in images]).float()
         labels_tensor = torch.tensor(valid_labels, dtype=torch.long)
         
         return images_tensor, labels_tensor
     
     def train_lora(self, 
-                   train_images: torch.Tensor, 
-                   train_labels: torch.Tensor,
-                   val_images: Optional[torch.Tensor] = None,
-                   val_labels: Optional[torch.Tensor] = None,
+                   train_images: Any, 
+                   train_labels: Any,
+                   val_images: Optional[Any] = None,
+                   val_labels: Optional[Any] = None,
                    epochs: int = 10,
                    learning_rate: float = 1e-4,
                    batch_size: int = 16) -> Dict[str, Any]:
@@ -110,6 +111,8 @@ class LoRATrainer(LoggerMixin):
         Returns:
             Training history dictionary
         """
+        import torch
+        
         if self.peft_model is None:
             if not self.setup_lora_model():
                 raise RuntimeError("Failed to setup LoRA model")
@@ -193,6 +196,7 @@ class LoRATrainer(LoggerMixin):
             optimizer.step()
             
             total_loss += loss.item()
+            import torch
             _, predicted = torch.max(outputs.data, 1)
             total += batch_labels.size(0)
             correct += (predicted == batch_labels).sum().item()
@@ -209,6 +213,7 @@ class LoRATrainer(LoggerMixin):
         correct = 0
         total = 0
         
+        import torch
         with torch.no_grad():
             for batch_images, batch_labels in val_loader:
                 batch_images = batch_images.to(device)

@@ -1,12 +1,12 @@
 """Diversity metrics calculation for species analysis."""
 
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from collections import Counter
 import math
-from scipy import stats
-from scipy.special import gammaln
+# from scipy import stats  # Removed for minimal deployment
+# from scipy.special import gammaln  # Removed for minimal deployment
 
 from ..utils.logger import LoggerMixin
 from ..utils.data_structures import SpeciesPrediction, DiversityMetrics
@@ -51,19 +51,19 @@ class DiversityCalculator(LoggerMixin):
         if not species_counts:
             return self._empty_metrics()
         
-        counts = np.array(list(species_counts.values()))
-        total = np.sum(counts)
+        counts = list(species_counts.values())
+        total = sum(counts)
         
         if total == 0:
             return self._empty_metrics()
         
         richness = len(species_counts)
         
-        proportions = counts / total
-        shannon = -np.sum(proportions * np.log(proportions + 1e-10))
+        proportions = [c / total for c in counts]
+        shannon = -sum(p * math.log(p + 1e-10) for p in proportions)
         
         if richness > 1:
-            max_shannon = np.log(richness)
+            max_shannon = math.log(richness)
             pielou = shannon / max_shannon
         else:
             pielou = 1.0
@@ -73,7 +73,7 @@ class DiversityCalculator(LoggerMixin):
             for q in self.config.hill_orders:
                 hill_numbers[f'hill_q{q}'] = self._calculate_hill_number(proportions, q)
         
-        simpson = 1.0 - np.sum(proportions ** 2)
+        simpson = 1.0 - sum(p ** 2 for p in proportions)
         
         metrics = {
             'species_richness': float(richness),
@@ -98,11 +98,11 @@ class DiversityCalculator(LoggerMixin):
         if not species_counts:
             return 0.0, 0.0
         
-        counts = np.array(list(species_counts.values()))
+        counts = list(species_counts.values())
         observed_richness = len(counts)
         
-        f1 = np.sum(counts == 1)  # singletons
-        f2 = np.sum(counts == 2)  # doubletons
+        f1 = sum(1 for c in counts if c == 1)  # singletons
+        f2 = sum(1 for c in counts if c == 2)  # doubletons
         
         if f2 > 0:
             chao1 = observed_richness + (f1 ** 2) / (2 * f2)
@@ -114,7 +114,7 @@ class DiversityCalculator(LoggerMixin):
         else:
             var_chao1 = f1 * (f1 - 1) / 2 + f1 * (2 * f1 - 1) ** 2 / 4 - f1 ** 4 / (4 * chao1)
         
-        chao1_se = np.sqrt(max(0, var_chao1))
+        chao1_se = math.sqrt(max(0, var_chao1))
         
         return float(chao1), float(chao1_se)
     
@@ -133,10 +133,10 @@ class DiversityCalculator(LoggerMixin):
         if not species_counts:
             return {}
         
-        counts = np.array(list(species_counts.values()))
-        total = np.sum(counts)
+        counts = list(species_counts.values())
+        total = sum(counts)
         
-        f1 = np.sum(counts == 1)
+        f1 = sum(1 for c in counts if c == 1)
         coverage = 1.0 - (f1 / total) if total > 0 else 0.0
         
         target_coverage = self.config.coverage_target
@@ -191,12 +191,9 @@ class DiversityCalculator(LoggerMixin):
             for q in self.config.hill_orders:
                 bootstrap_results[f'hill_q{q}'] = []
         
+        import random
         for _ in range(self.config.bootstrap_iterations):
-            bootstrap_sample = np.random.choice(
-                species_list, 
-                size=len(species_list), 
-                replace=True
-            )
+            bootstrap_sample = [random.choice(species_list) for _ in range(len(species_list))]
             
             bootstrap_counts = Counter(bootstrap_sample)
             
@@ -211,18 +208,21 @@ class DiversityCalculator(LoggerMixin):
         
         for metric_name, values in bootstrap_results.items():
             if values:
-                values_array = np.array(values, dtype=np.float64)
+                values.sort()
+                n = len(values)
                 lower_percentile = (alpha / 2) * 100
                 upper_percentile = (1 - alpha / 2) * 100
                 
-                lower_ci = np.percentile(values_array, lower_percentile)
-                upper_ci = np.percentile(values_array, upper_percentile)
+                lower_idx = int(n * lower_percentile / 100)
+                upper_idx = int(n * upper_percentile / 100)
+                lower_ci = values[min(lower_idx, n-1)]
+                upper_ci = values[min(upper_idx, n-1)]
                 
                 confidence_intervals[metric_name] = (float(lower_ci), float(upper_ci))
         
         return confidence_intervals
     
-    def _calculate_hill_number(self, proportions: np.ndarray[Any, np.dtype[Any]], q: float) -> float:
+    def _calculate_hill_number(self, proportions: list, q: float) -> float:
         """Calculate Hill number of order q.
         
         Args:
@@ -238,37 +238,37 @@ class DiversityCalculator(LoggerMixin):
         if q == 0:
             return float(len(proportions))
         elif q == 1:
-            shannon = -np.sum(proportions * np.log(proportions + 1e-10))
-            return float(np.exp(shannon))
+            shannon = -sum(p * math.log(p + 1e-10) for p in proportions)
+            return float(math.exp(shannon))
         else:
-            if np.any(proportions <= 0):
+            if any(p <= 0 for p in proportions):
                 return 0.0
-            diversity = np.sum(proportions ** q) ** (1 / (1 - q))
+            diversity = sum(p ** q for p in proportions) ** (1 / (1 - q))
             return float(diversity)
     
-    def _interpolate_to_coverage(self, counts: np.ndarray[Any, np.dtype[Any]], target_coverage: float) -> np.ndarray[Any, np.dtype[Any]]:
+    def _interpolate_to_coverage(self, counts: list, target_coverage: float) -> list:
         """Interpolate species counts to target coverage."""
-        total = np.sum(counts)
-        f1 = np.sum(counts == 1)
+        total = sum(counts)
+        f1 = sum(1 for c in counts if c == 1)
         current_coverage = 1.0 - (f1 / total) if total > 0 else 0.0
         
         if current_coverage <= target_coverage:
             return counts
         
         scaling_factor = target_coverage / current_coverage
-        return counts * scaling_factor
+        return [c * scaling_factor for c in counts]
     
-    def _extrapolate_to_coverage(self, counts: np.ndarray[Any, np.dtype[Any]], target_coverage: float) -> np.ndarray[Any, np.dtype[Any]]:
+    def _extrapolate_to_coverage(self, counts: list, target_coverage: float) -> list:
         """Extrapolate species counts to target coverage."""
-        total = np.sum(counts)
-        f1 = np.sum(counts == 1)
+        total = sum(counts)
+        f1 = sum(1 for c in counts if c == 1)
         current_coverage = 1.0 - (f1 / total) if total > 0 else 0.0
         
         if current_coverage >= target_coverage:
             return counts
         
         scaling_factor = target_coverage / (current_coverage + 1e-10)
-        return counts * scaling_factor
+        return [c * scaling_factor for c in counts]
     
     def _empty_metrics(self) -> Dict[str, float]:
         """Return empty metrics dictionary."""

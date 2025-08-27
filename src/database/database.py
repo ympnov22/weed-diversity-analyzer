@@ -10,6 +10,9 @@ from typing import Generator
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./weed_diversity.db")
 
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 if "sqlite" in DATABASE_URL:
     engine = create_engine(
         DATABASE_URL,

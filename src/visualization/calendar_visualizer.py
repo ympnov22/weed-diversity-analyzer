@@ -1,7 +1,7 @@
 """GitHub grass-style calendar visualization for diversity metrics."""
 
 import json
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from datetime import datetime, date, timedelta
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
@@ -444,9 +444,11 @@ class CalendarVisualizer(LoggerMixin):
             current_date = start_date + timedelta(days=i)
             
             day_of_year = current_date.timetuple().tm_yday
-            seasonal_factor = 0.5 + 0.5 * np.sin(2 * np.pi * day_of_year / 365)
+            import math
+            import random
+            seasonal_factor = 0.5 + 0.5 * math.sin(2 * math.pi * day_of_year / 365)
             
-            shannon_diversity = np.random.normal(1.5, 0.3) * seasonal_factor
+            shannon_diversity = random.gauss(1.5, 0.3) * seasonal_factor
             shannon_diversity = max(0, min(3.0, shannon_diversity))
             
             if shannon_diversity < 0.5:
@@ -462,8 +464,8 @@ class CalendarVisualizer(LoggerMixin):
                 "date": current_date.strftime("%Y-%m-%d"),
                 "value": shannon_diversity,
                 "level": level,
-                "species_count": int(np.random.poisson(5) * seasonal_factor) + 1,
-                "total_images": np.random.randint(5, 25)
+                "species_count": int(random.expovariate(1/5) * seasonal_factor) + 1,
+                "total_images": random.randint(5, 25)
             })
         
         return {
