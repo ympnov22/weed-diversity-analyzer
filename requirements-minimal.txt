@@ -23,3 +23,6 @@ pandas>=2.0.0
 
 # Basic image processing (pillow only, no opencv)
 pillow>=10.0.0
+
+# Visualization dependencies (required by time_series_visualizer)
+plotly>=5.15.0
