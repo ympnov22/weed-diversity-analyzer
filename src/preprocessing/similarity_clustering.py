@@ -48,7 +48,7 @@ class SimilarityClusterer(LoggerMixin):
         if self.config.similarity_method == "feature_based":
             self._init_feature_detector()
     
-    def _init_feature_detector(self):
+    def _init_feature_detector(self) -> None:
         """Initialize feature detector based on configuration."""
         if self.config.feature_detector == "orb":
             self.feature_detector = cv2.ORB_create(nfeatures=self.config.max_features)
