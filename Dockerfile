@@ -42,6 +42,7 @@ RUN adduser -D -s /bin/sh appuser
 # Copy only essential application files
 COPY --chown=appuser:appuser app.py .
 COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser config/ ./config/
 
 # Create minimal necessary directories
 RUN mkdir -p logs temp \
