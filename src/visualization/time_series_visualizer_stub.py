@@ -110,3 +110,5 @@ class TimeSeriesVisualizerStub(LoggerMixin):
     </div>
 </body>
 </html>"""
+
+TimeSeriesVisualizer = TimeSeriesVisualizerStub

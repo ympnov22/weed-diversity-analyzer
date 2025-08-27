@@ -139,3 +139,5 @@ class DashboardGeneratorStub(LoggerMixin):
     </div>
 </body>
 </html>"""
+
+DashboardGenerator = DashboardGeneratorStub

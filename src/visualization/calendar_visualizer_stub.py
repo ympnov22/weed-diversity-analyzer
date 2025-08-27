@@ -148,3 +148,5 @@ class CalendarVisualizerStub(LoggerMixin):
     </div>
 </body>
 </html>"""
+
+CalendarVisualizer = CalendarVisualizerStub
