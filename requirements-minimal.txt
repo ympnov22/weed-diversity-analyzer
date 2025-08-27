@@ -26,3 +26,6 @@ pillow>=10.0.0
 
 # Visualization dependencies (required by time_series_visualizer)
 plotly>=5.15.0
+
+# Scientific computing (required by diversity_calculator)
+scipy>=1.11.0
