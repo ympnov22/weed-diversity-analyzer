@@ -1,6 +1,6 @@
 """FastAPI web server for visualization interface."""
 
-from fastapi import FastAPI, HTTPException, Depends, Request, status
+from fastapi import FastAPI, HTTPException, Depends, Request, status, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -326,6 +326,90 @@ class WebServer(LoggerMixin):
             except Exception as e:
                 self.logger.error(f"Failed to create user: {e}")
                 raise HTTPException(status_code=500, detail=str(e))
+
+        @self.app.post("/api/upload")
+        async def upload_image(
+            file: UploadFile = File(...),
+            user: UserModel = Depends(require_auth),
+            db: Session = Depends(get_db)
+        ):
+            """Upload and analyze image."""
+            try:
+                if not file.content_type or not file.content_type.startswith('image/'):
+                    raise HTTPException(status_code=400, detail="File must be an image")
+                
+                allowed_types = ['image/jpeg', 'image/png', 'image/webp']
+                if file.content_type not in allowed_types:
+                    raise HTTPException(status_code=400, detail="Unsupported image format")
+                
+                contents = await file.read()
+                if len(contents) > 10 * 1024 * 1024:
+                    raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+                
+                import tempfile
+                import uuid
+                from pathlib import Path
+                
+                temp_dir = Path(tempfile.gettempdir()) / "weed_analyzer_uploads"
+                temp_dir.mkdir(exist_ok=True)
+                
+                file_id = str(uuid.uuid4())
+                temp_file = temp_dir / f"{file_id}_{file.filename}"
+                
+                with open(temp_file, "wb") as f:
+                    f.write(contents)
+                
+                if self.model_manager and self.model_loaded:
+                    from ..inference_pipeline import InferencePipeline
+                    pipeline = InferencePipeline(self.model_manager.config)
+                    result = pipeline.process_single_image(temp_file)
+                    
+                    if result:
+                        db_service = DatabaseService(db)
+                        
+                        sessions = db_service.get_user_sessions(user.id)
+                        if sessions:
+                            session = sessions[0]
+                        else:
+                            session = db_service.create_analysis_session(
+                                user.id, 
+                                f"Upload Session {datetime.now().strftime('%Y-%m-%d')}"
+                            )
+                        
+                        image_id = db_service.store_upload_result(
+                            session.id,
+                            file.filename or "uploaded_image",
+                            str(temp_file),
+                            result["predictions"],
+                            result["processing_time"],
+                            result["model_info"]
+                        )
+                        
+                        temp_file.unlink()
+                        
+                        return JSONResponse({
+                            "success": True,
+                            "file_id": file_id,
+                            "image_id": image_id,
+                            "filename": file.filename,
+                            "predictions": result["predictions"],
+                            "processing_time": result["processing_time"],
+                            "model_info": result["model_info"],
+                            "quality_assessment": result.get("quality_assessment", {}),
+                            "session_id": session.id
+                        })
+                    else:
+                        temp_file.unlink()
+                        raise HTTPException(status_code=400, detail="Image processing failed")
+                else:
+                    temp_file.unlink()
+                    raise HTTPException(status_code=503, detail="Model not available")
+                    
+            except HTTPException:
+                raise
+            except Exception as e:
+                self.logger.error(f"Upload failed: {e}")
+                raise HTTPException(status_code=500, detail=str(e))
     
     def _generate_sample_daily_summaries(self) -> List[Dict[str, Any]]:
         """Generate sample daily summaries for testing."""
@@ -359,6 +443,32 @@ class WebServer(LoggerMixin):
         
         return summaries
     
+    def _get_upload_interface_html(self) -> str:
+        """Generate upload interface HTML."""
+        return """
+        <div class="upload-section">
+            <h2>🌱 画像アップロード解析</h2>
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <div class="upload-icon">📷</div>
+                    <p>画像をここにドラッグ&ドロップするか <button type="button" id="selectFile">ファイルを選択</button></p>
+                    <p class="upload-hint">対応形式: JPEG, PNG, WebP (最大10MB)</p>
+                </div>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+            </div>
+            <div class="upload-progress" id="uploadProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p id="progressText">アップロード中...</p>
+            </div>
+            <div class="upload-results" id="uploadResults" style="display: none;">
+                <h3>解析結果</h3>
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+        """
+
     def _setup_static_files(self):
         """Setup static file serving."""
         if self.static_dir.exists():
@@ -383,6 +493,8 @@ class WebServer(LoggerMixin):
             <h1>畑植生多様性解析ダッシュボード</h1>
             <p class="subtitle">iNatAg (2,959種対応) による自然農法畑の植生多様性分析</p>
         </header>
+        
+        {self._get_upload_interface_html()}
         
         <nav class="dashboard-nav">
             <div class="nav-grid">
@@ -617,6 +729,125 @@ class WebServer(LoggerMixin):
             }
         }
         
+        .upload-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .upload-section h2 {
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .upload-area {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .upload-area:hover, .upload-area.drag-over {
+            border-color: #4CAF50;
+            background: rgba(76,175,80,0.1);
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .upload-content p {
+            margin: 10px 0;
+            color: white;
+        }
+        
+        .upload-hint {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+        }
+        
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s ease;
+        }
+        
+            background: #45a049;
+        }
+        
+        .upload-progress {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .upload-results {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 8px;
+            color: #333;
+        }
+        
+        .result-summary {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+        
+        .predictions {
+            background: white;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .prediction-item:last-child {
+            border-bottom: none;
+        }
+        
+        .species {
+            font-weight: bold;
+            color: #2c5530;
+        }
+        
+        .confidence {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
         @media (max-width: 480px) {
             .info-grid {
                 grid-template-columns: 1fr;
@@ -628,6 +859,8 @@ class WebServer(LoggerMixin):
         """Get JavaScript for dashboard interactivity."""
         return """
         document.addEventListener('DOMContentLoaded', function() {
+            initializeUpload();
+            
             const navCards = document.querySelectorAll('.nav-card');
             
             navCards.forEach(card => {
@@ -651,6 +884,116 @@ class WebServer(LoggerMixin):
                     console.error('Failed to fetch status:', error);
                 });
         });
+        
+        function initializeUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const selectButton = document.getElementById('selectFile');
+            const progressDiv = document.getElementById('uploadProgress');
+            const resultsDiv = document.getElementById('uploadResults');
+            
+            if (!uploadArea || !fileInput || !selectButton) return;
+            
+            selectButton.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    uploadFile(files[0]);
+                }
+            });
+            
+            function handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) uploadFile(file);
+            }
+            
+            async function uploadFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                progressDiv.style.display = 'block';
+                resultsDiv.style.display = 'none';
+                
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                let progress = 0;
+                const progressInterval = setInterval(() => {
+                    progress += 10;
+                    progressFill.style.width = progress + '%';
+                    if (progress >= 90) clearInterval(progressInterval);
+                }, 100);
+                
+                try {
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: {
+                            'X-API-Key': getApiKey()
+                        },
+                        body: formData
+                    });
+                    
+                    clearInterval(progressInterval);
+                    progressFill.style.width = '100%';
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        displayResults(result);
+                    } else {
+                        throw new Error(result.detail || 'Upload failed');
+                    }
+                } catch (error) {
+                    clearInterval(progressInterval);
+                    alert('アップロードに失敗しました: ' + error.message);
+                } finally {
+                    setTimeout(() => {
+                        progressDiv.style.display = 'none';
+                        progressFill.style.width = '0%';
+                    }, 1000);
+                }
+            }
+            
+            function displayResults(result) {
+                const content = document.getElementById('resultsContent');
+                content.innerHTML = `
+                    <div class="result-summary">
+                        <p><strong>ファイル:</strong> ${result.filename}</p>
+                        <p><strong>処理時間:</strong> ${result.processing_time.toFixed(2)}秒</p>
+                        <p><strong>モデル:</strong> ${result.model_info.model_name || 'iNatAg Swin Transformer'}</p>
+                        <p><strong>セッションID:</strong> ${result.session_id}</p>
+                    </div>
+                    <div class="predictions">
+                        <h4>上位予測結果:</h4>
+                        ${result.predictions.slice(0, 5).map(pred => `
+                            <div class="prediction-item">
+                                <span class="species">${pred.species_name}</span>
+                                <span class="confidence">${(pred.confidence * 100).toFixed(1)}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                resultsDiv.style.display = 'block';
+                
+                resultsDiv.scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            function getApiKey() {
+                return 'demo-api-key';
+            }
+        }
         """
     
     def run(self, debug: bool = False):
