@@ -51,14 +51,14 @@ class SimilarityClusterer(LoggerMixin):
     def _init_feature_detector(self) -> None:
         """Initialize feature detector based on configuration."""
         if self.config.feature_detector == "orb":
-            self.feature_detector = cv2.ORB_create(nfeatures=self.config.max_features)
+            self.feature_detector = cv2.ORB.create(nfeatures=self.config.max_features)  # type: ignore[attr-defined]
         elif self.config.feature_detector == "sift":
-            self.feature_detector = cv2.SIFT_create(nfeatures=self.config.max_features)
+            self.feature_detector = cv2.SIFT.create(nfeatures=self.config.max_features)  # type: ignore[attr-defined]
         else:
             self.logger.warning(f"Unknown feature detector: {self.config.feature_detector}, using ORB")
-            self.feature_detector = cv2.ORB_create(nfeatures=self.config.max_features)
+            self.feature_detector = cv2.ORB.create(nfeatures=self.config.max_features)  # type: ignore[attr-defined]
     
-    def calculate_ssim_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def calculate_ssim_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
         """Calculate SSIM (Structural Similarity Index) between two images.
         
         Args:
@@ -76,10 +76,10 @@ class SimilarityClusterer(LoggerMixin):
             gray1 = cv2.resize(gray1, (w, h))
             gray2 = cv2.resize(gray2, (w, h))
         
-        similarity_score = ssim(gray1, gray2)
+        similarity_score = ssim(gray1, gray2)  # type: ignore[no-untyped-call]
         return float(similarity_score)
     
-    def calculate_histogram_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def calculate_histogram_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
         """Calculate histogram-based similarity between two images.
         
         Args:
@@ -91,20 +91,21 @@ class SimilarityClusterer(LoggerMixin):
         """
         similarities = []
         
-        for channel in self.config.hist_channels:
-            if channel < image1.shape[2] and channel < image2.shape[2]:
-                hist1 = cv2.calcHist([image1], [channel], None, [self.config.hist_bins], [0, 256])
-                hist2 = cv2.calcHist([image2], [channel], None, [self.config.hist_bins], [0, 256])
-                
-                hist1 = cv2.normalize(hist1, hist1).flatten()
-                hist2 = cv2.normalize(hist2, hist2).flatten()
-                
-                correlation = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
-                similarities.append(correlation)
+        if self.config.hist_channels is not None:
+            for channel in self.config.hist_channels:
+                if channel < image1.shape[2] and channel < image2.shape[2]:
+                    hist1 = cv2.calcHist([image1], [channel], None, [self.config.hist_bins], [0, 256])
+                    hist2 = cv2.calcHist([image2], [channel], None, [self.config.hist_bins], [0, 256])
+                    
+                    hist1 = cv2.normalize(hist1, hist1).flatten()
+                    hist2 = cv2.normalize(hist2, hist2).flatten()
+                    
+                    correlation = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+                    similarities.append(correlation)
         
         return float(np.mean(similarities)) if similarities else 0.0
     
-    def calculate_feature_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def calculate_feature_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
         """Calculate feature-based similarity between two images.
         
         Args:
@@ -146,7 +147,7 @@ class SimilarityClusterer(LoggerMixin):
         
         return float(min(similarity, 1.0))
     
-    def calculate_similarity(self, image1: np.ndarray[Any, np.dtype[Any]], image2: np.ndarray[Any, np.dtype[Any]]) -> float:
+    def calculate_similarity(self, image1: np.ndarray, image2: np.ndarray) -> float:
         """Calculate similarity between two images using configured method.
         
         Args:
@@ -166,7 +167,7 @@ class SimilarityClusterer(LoggerMixin):
             self.logger.error(f"Unknown similarity method: {self.config.similarity_method}")
             return 0.0
     
-    def build_similarity_matrix(self, images: List[np.ndarray[Any, np.dtype[Any]]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def build_similarity_matrix(self, images: List[np.ndarray]) -> np.ndarray:
         """Build similarity matrix for a list of images.
         
         Args:
@@ -210,7 +211,7 @@ class SimilarityClusterer(LoggerMixin):
         cluster_labels = kmeans.fit_predict(distance_matrix)
         
         self.logger.info(f"K-means clustering created {n_clusters} clusters")
-        return cluster_labels
+        return cluster_labels  # type: ignore[no-any-return]
     
     def cluster_images_hierarchical(self, similarity_matrix: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Cluster images using hierarchical clustering.
@@ -235,7 +236,7 @@ class SimilarityClusterer(LoggerMixin):
         cluster_labels = clustering.fit_predict(distance_matrix)
         
         self.logger.info(f"Hierarchical clustering created {n_clusters} clusters")
-        return cluster_labels
+        return cluster_labels  # type: ignore[no-any-return]
     
     def cluster_images(self, images: List[np.ndarray[Any, np.dtype[Any]]]) -> np.ndarray[Any, np.dtype[Any]]:
         """Cluster images using configured method.
@@ -317,10 +318,10 @@ class SimilarityClusterer(LoggerMixin):
             score = self._calculate_quality_score(image, image_data)
             
             if score > best_score:
-                best_score = score
-                best_idx = original_indices[i]
+                best_score = float(score)
+                best_idx = int(original_indices[i])
         
-        return best_idx
+        return best_idx  # type: ignore[no-any-return]
     
     def _calculate_quality_score(self, image: np.ndarray[Any, np.dtype[Any]], image_data: ImageData) -> float:
         """Calculate overall quality score for an image.
