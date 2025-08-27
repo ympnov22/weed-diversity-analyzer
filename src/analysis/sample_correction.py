@@ -224,7 +224,7 @@ class SampleCorrection(LoggerMixin):
     
     def _calculate_correction_summary(
         self, 
-        corrected_metrics: Dict[str, Dict], 
+        corrected_metrics: Dict[str, Dict[str, Any]], 
         original_sizes: Dict[str, int]
     ) -> Dict[str, Any]:
         """Calculate summary statistics for sample correction.
@@ -239,7 +239,7 @@ class SampleCorrection(LoggerMixin):
         if not corrected_metrics:
             return {}
         
-        diversity_values = {
+        diversity_values: Dict[str, List[float]] = {
             'species_richness': [],
             'shannon_diversity': [],
             'pielou_evenness': [],
