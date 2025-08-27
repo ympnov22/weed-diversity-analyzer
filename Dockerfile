@@ -5,11 +5,15 @@ FROM python:3.12-alpine as builder
 ENV PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install minimal build dependencies
+# Install build dependencies including C++ compiler for scikit-learn
 RUN apk add --no-cache \
     gcc \
+    g++ \
     musl-dev \
-    postgresql-dev
+    postgresql-dev \
+    gfortran \
+    openblas-dev \
+    lapack-dev
 
 # Create virtual environment
 RUN python -m venv /opt/venv
