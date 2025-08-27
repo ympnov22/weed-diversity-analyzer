@@ -27,9 +27,11 @@ class CalendarVisualizerStub(LoggerMixin):
         self.logger.info("CalendarVisualizer initialized in stub mode (no heavy dependencies)")
     
     def generate_calendar_html(self,
-                             diversity_data: Dict[str, float],
+                             diversity_data: Dict[str, float] = None,
                              year: int = None,
-                             output_path: Optional[Path] = None) -> str:
+                             output_path: Optional[Path] = None,
+                             calendar_data: Dict[str, Any] = None,
+                             **kwargs) -> str:
         """Stub implementation for calendar HTML generation."""
         self.logger.warning("Calendar visualization not available in minimal mode")
         
