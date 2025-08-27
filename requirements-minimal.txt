@@ -1,4 +1,4 @@
-# Minimal web framework dependencies only
+# Minimal web framework dependencies
 fastapi>=0.100.0
 uvicorn[standard]>=0.24.0
 
@@ -16,3 +16,11 @@ click>=8.1.0
 # Authentication
 passlib>=1.7.4
 python-jose[cryptography]>=3.3.0
+
+# Essential scientific computing (required by core application)
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Image processing (required by visualization and preprocessing)
+opencv-python-headless>=4.8.0
+pillow>=10.0.0
