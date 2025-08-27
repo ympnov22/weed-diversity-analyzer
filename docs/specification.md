@@ -1,35 +1,43 @@
-# 自然農法畑植生多様性解析ツール（iNatAg版） 仕様書
+# Natural Farming Field Vegetation Diversity Analysis Tool (iNatAg Version) - Technical Specification
 
-## 1. プロジェクト概要
+## 1. Project Overview
 
-### 1.1 目的
-自然農法の畑の植生を撮影した画像から、雑草の種類と多様性を判定し、日ごとに時系列で可視化するツールを開発する。iNatAgデータセット（2,959種、470万画像）をベースとしたSwin Transformer + LoRA微調整により、北海道の畑画像に特化した高精度な植生解析を実現する。
+### 1.1 Purpose
+Develop a tool to identify weed species and analyze diversity from field images in natural farming practices, with time-series visualization capabilities. Utilizes the iNatAg dataset (2,959 species, 4.7M images) with Swin Transformer + LoRA fine-tuning for high-precision vegetation analysis specialized for Hokkaido field conditions.
 
-### 1.2 目標
-- **高精度な雑草種識別**: iNatAg（2,959種対応）による大規模種分類
-- **北海道適応**: Swin Transformer + LoRA微調整による地域特化
-- **生物多様性指標の正確な算出**: Shannon多様度、Hill数等の高精度計算
-- **撮影条件の違いに対する頑健性**: 天候・時間帯変動への対応
-- **拡張性を考慮したモジュール設計**: 他地域・他作物への展開可能性
+### 1.2 Objectives
+- **High-precision weed species identification**: Large-scale classification using iNatAg (2,959 species support)
+- **Hokkaido adaptation**: Regional specialization through Swin Transformer + LoRA fine-tuning
+- **Accurate biodiversity metrics calculation**: High-precision computation of Shannon diversity, Hill numbers, etc.
+- **Robustness to varying shooting conditions**: Adaptation to weather and time-of-day variations
+- **Modular design for extensibility**: Expandability to other regions and crops
 
-### 1.3 対象ユーザー
-- **自然農法実践者**（一次利用者）: 畑記録ツールとして利用
-- **農業研究者**（将来的な拡張対象）: 比較研究・学術利用
+### 1.3 Target Users
+- **Natural farming practitioners** (primary users): Field recording tool
+- **Agricultural researchers** (future expansion): Comparative research and academic use
 
-### 1.4 技術的優位性
-- **大規模データセット**: 470万画像、2,959種（従来比1.86倍の種カバレッジ）
-- **最新アーキテクチャ**: Swin Transformer による高精度画像認識
-- **効率的適応**: LoRA微調整による軽量な地域適応学習
-- **学術的裏付け**: arXiv論文による技術的信頼性
+### 1.4 Technical Advantages
+- **Large-scale dataset**: 4.7M images, 2,959 species (1.86x species coverage compared to previous versions)
+- **State-of-the-art architecture**: High-precision image recognition with Swin Transformer
+- **Efficient adaptation**: Lightweight regional adaptation learning through LoRA fine-tuning
+- **Academic foundation**: Technical reliability backed by arXiv publications
 
-## 2. 機能要件
+## 2. Functional Requirements
 
-### 2.1 入力仕様
-- **データ形式**: JPEG画像ファイル
-- **ディレクトリ構造**: `data/YYYY-MM-DD/*.jpg`
-- **画像サイズ**: 224x224以上（Swin Transformer最適化）
-- **撮影条件**: 屋外自然光、様々な天候・時間帯
-- **対象地域**: 北海道の自然農法畑（LoRA適応対象）
+### 2.1 Input Specifications
+- **Data format**: JPEG image files
+- **Directory structure**: `data/YYYY-MM-DD/*.jpg` or web upload interface
+- **Image size**: 224x224 minimum (Swin Transformer optimized)
+- **Shooting conditions**: Outdoor natural light, various weather and time conditions
+- **Target region**: Natural farming fields in Hokkaido (LoRA adaptation target)
+
+### 2.1.1 Image Upload Interface (NEW - Phase A Implementation)
+- **Web upload endpoint**: `POST /api/upload` with multipart/form-data support
+- **Supported formats**: JPEG, PNG, WebP (auto-conversion to JPEG)
+- **File size limits**: Maximum 10MB per image, batch upload up to 50 images
+- **Validation**: Format verification, size validation, corruption detection
+- **Progress tracking**: Real-time upload progress and processing status
+- **Error handling**: Comprehensive error messages and retry mechanisms
 
 ### 2.2 前処理機能
 
