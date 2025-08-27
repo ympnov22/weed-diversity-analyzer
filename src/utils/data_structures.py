@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 
 
 @dataclass
@@ -73,12 +73,16 @@ class PredictionResult:
         if self.predictions:
             self.top_prediction = max(self.predictions, key=lambda p: p.confidence)
             
-            self.mean_confidence = float(np.mean([p.confidence for p in self.predictions]))
+            self.mean_confidence = sum(p.confidence for p in self.predictions) / len(self.predictions)
             
-            confidences = np.array([p.confidence for p in self.predictions])
-            if confidences.sum() > 0:
-                probs = confidences / confidences.sum()
-                self.prediction_entropy = -np.sum(probs * np.log(probs + 1e-10))
+            confidences = [p.confidence for p in self.predictions]
+            total_conf = sum(confidences)
+            if total_conf > 0:
+                import math
+                probs = [c / total_conf for c in confidences]
+                self.prediction_entropy = -sum(p * math.log(p + 1e-10) for p in probs if p > 0)
+            else:
+                self.prediction_entropy = 0.0
     
     def get_top_k(self, k: int = 3) -> List[SpeciesPrediction]:
         """Get top-k predictions sorted by confidence."""

@@ -1,13 +1,13 @@
 """Complete inference pipeline integrating preprocessing and models."""
 
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 import time
 import cv2
 
 from .preprocessing.image_processor import ImageProcessor, PreprocessingConfig
-from .preprocessing.similarity_clustering import SimilarityClusterer, ClusteringConfig
+from .preprocessing.similarity_clustering_stub import SimilarityClusteringStub as SimilarityClusterer, ClusteringConfig
 from .preprocessing.quality_assessment import QualityAssessor, QualityThresholds
 from .models.model_manager import ModelManager
 from .utils.config import ConfigManager
@@ -96,7 +96,7 @@ class InferencePipeline(LoggerMixin):
         self.logger.info(f"Accepted {len(quality_results)}/{len(image_files)} images after quality assessment")
         return quality_results
     
-    def _cluster_and_select_representatives(self, quality_results: List[Tuple[Path, Dict[str, Any]]]) -> List[Tuple[Path, np.ndarray]]:
+    def _cluster_and_select_representatives(self, quality_results: List[Tuple[Path, Dict[str, Any]]]) -> List[Tuple[Path, Any]]:
         """Cluster similar images and select representatives."""
         if len(quality_results) <= 1:
             if quality_results:
@@ -123,7 +123,7 @@ class InferencePipeline(LoggerMixin):
             self.logger.error(f"Clustering failed: {e}, using all images")
             return images_for_clustering
     
-    def _run_inference(self, representative_images: List[Tuple[Path, np.ndarray]]) -> List[Dict[str, Any]]:
+    def _run_inference(self, representative_images: List[Tuple[Path, Any]]) -> List[Dict[str, Any]]:
         """Run inference on representative images."""
         predictions = []
         
@@ -182,10 +182,10 @@ class InferencePipeline(LoggerMixin):
         swin_scores = [result[1]['swin_compatibility']['overall_swin_score'] for result in quality_results]
         
         return {
-            'avg_quality_score': float(np.mean(quality_scores)),
-            'min_quality_score': float(np.min(quality_scores)),
-            'max_quality_score': float(np.max(quality_scores)),
-            'avg_swin_compatibility': float(np.mean(swin_scores)),
+            'avg_quality_score': sum(quality_scores) / len(quality_scores),
+            'min_quality_score': min(quality_scores),
+            'max_quality_score': max(quality_scores),
+            'avg_swin_compatibility': sum(swin_scores) / len(swin_scores),
             'quality_distribution': {
                 'excellent': sum(1 for score in quality_scores if score >= 0.8),
                 'good': sum(1 for score in quality_scores if 0.6 <= score < 0.8),
@@ -194,7 +194,7 @@ class InferencePipeline(LoggerMixin):
             }
         }
     
-    def _summarize_clustering(self, quality_results: List[Tuple[Path, Dict[str, Any]]], representatives: List[Tuple[Path, np.ndarray]]) -> Dict[str, Any]:
+    def _summarize_clustering(self, quality_results: List[Tuple[Path, Dict[str, Any]]], representatives: List[Tuple[Path, Any]]) -> Dict[str, Any]:
         """Summarize clustering results."""
         return {
             'input_images': len(quality_results),

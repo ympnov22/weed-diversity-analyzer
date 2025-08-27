@@ -1,4 +1,4 @@
-# Minimal web framework dependencies
+# Minimal web framework dependencies only
 fastapi>=0.100.0
 uvicorn[standard]>=0.24.0
 
@@ -16,19 +16,3 @@ click>=8.1.0
 # Authentication
 passlib>=1.7.4
 python-jose[cryptography]>=3.3.0
-
-# Essential scientific computing (required by core application)
-numpy>=1.24.0
-pandas>=2.0.0
-
-# Basic image processing (pillow only, no opencv)
-pillow>=10.0.0
-
-# Visualization dependencies (required by time_series_visualizer)
-plotly>=5.15.0
-
-# Scientific computing (required by diversity_calculator)
-scipy>=1.11.0
-
-# Machine learning (required by comparative_analysis)
-scikit-learn>=1.3.0

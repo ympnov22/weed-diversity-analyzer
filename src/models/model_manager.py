@@ -1,6 +1,6 @@
 """Multi-model management system with fallback and aggregation."""
 
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 import time
@@ -67,7 +67,7 @@ class ModelManager(LoggerMixin):
         from .base_model import ModelConfig
         
         config = ModelConfig(
-            model_name=model_config.model_name,
+            model_name=model_config.name,
             model_path=model_config.model_path,
             confidence_threshold=model_config.confidence_threshold,
             top_k=model_config.top_k or 3,
@@ -80,16 +80,16 @@ class ModelManager(LoggerMixin):
         model_size = 'base'  # Default size
         if hasattr(model_config, 'size'):
             model_size = model_config.size
-        elif 'tiny' in model_config.model_name.lower():
+        elif 'tiny' in model_config.name.lower():
             model_size = 'tiny'
-        elif 'small' in model_config.model_name.lower():
+        elif 'small' in model_config.name.lower():
             model_size = 'small'
-        elif 'large' in model_config.model_name.lower():
+        elif 'large' in model_config.name.lower():
             model_size = 'large'
         
         return iNatAgModel(config, model_size)
     
-    def predict_with_fallback(self, image: np.ndarray) -> PredictionResult:
+    def predict_with_fallback(self, image) -> PredictionResult:
         """Predict with primary model and fallback if needed.
         
         Args:
@@ -120,7 +120,7 @@ class ModelManager(LoggerMixin):
         self._update_performance_stats(self.primary_model, result, False)
         return result
     
-    def predict_batch_with_fallback(self, images: List[np.ndarray]) -> List[PredictionResult]:
+    def predict_batch_with_fallback(self, images: List) -> List[PredictionResult]:
         """Predict batch with fallback strategy.
         
         Args:
@@ -191,12 +191,13 @@ class ModelManager(LoggerMixin):
             return self._hard_voting_aggregation(results)
         
         num_classes = len(results[0].raw_outputs)
-        aggregated_probs = np.zeros(num_classes)
+        aggregated_probs = [0.0] * num_classes
         
         for result in results:
-            aggregated_probs += result.raw_outputs
+            for i, val in enumerate(result.raw_outputs):
+                aggregated_probs[i] += val
         
-        aggregated_probs /= len(results)
+        aggregated_probs = [p / len(results) for p in aggregated_probs]
         
         from .base_model import ModelConfig
         dummy_config = ModelConfig(model_name="aggregated", model_path="", top_k=results[0].model_info.get('top_k', 3))
@@ -226,7 +227,7 @@ class ModelManager(LoggerMixin):
         
         aggregated_predictions = []
         for species_name, confidences in species_votes.items():
-            avg_confidence = np.mean(confidences)
+            avg_confidence = sum(confidences) / len(confidences)
             vote_count = len(confidences)
             
             from ..utils.data_structures import SpeciesPrediction
@@ -256,17 +257,18 @@ class ModelManager(LoggerMixin):
             return self._hard_voting_aggregation(results)
         
         num_classes = len(results[0].raw_outputs)
-        weighted_probs = np.zeros(num_classes)
+        weighted_probs = [0.0] * num_classes
         total_weight = 0.0
         
         for result in results:
             if result.predictions:
                 weight = result.predictions[0].confidence
-                weighted_probs += result.raw_outputs * weight
+                for i, val in enumerate(result.raw_outputs):
+                    weighted_probs[i] += val * weight
                 total_weight += weight
         
         if total_weight > 0:
-            weighted_probs /= total_weight
+            weighted_probs = [p / total_weight for p in weighted_probs]
         
         from .base_model import ModelConfig
         dummy_config = ModelConfig(model_name="aggregated", model_path="", top_k=results[0].model_info.get('top_k', 3))

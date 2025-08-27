@@ -1,7 +1,7 @@
 """JSON output exporter for daily diversity summaries."""
 
 import json
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from datetime import datetime, date
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
@@ -188,7 +188,7 @@ class JSONExporter(LoggerMixin):
         
         top_species = []
         for species, count in sorted(species_counts.items(), key=lambda x: x[1], reverse=True)[:top_k]:
-            avg_confidence = np.mean(species_confidences[species])
+            avg_confidence = sum(species_confidences[species]) / len(species_confidences[species])
             top_species.append({
                 "species_name": species,
                 "count": count,
@@ -213,13 +213,14 @@ class JSONExporter(LoggerMixin):
             for prediction in result.predictions:
                 confidences.append(prediction.confidence)
         
+        import math
         stats = {
-            "total_processing_time": float(np.sum(processing_times)),
-            "average_processing_time": float(np.mean(processing_times)),
-            "min_processing_time": float(np.min(processing_times)),
-            "max_processing_time": float(np.max(processing_times)),
-            "average_confidence": float(np.mean(confidences)) if confidences else 0.0,
-            "confidence_std": float(np.std(confidences)) if confidences else 0.0,
+            "total_processing_time": float(sum(processing_times)),
+            "average_processing_time": float(sum(processing_times) / len(processing_times)) if processing_times else 0.0,
+            "min_processing_time": float(min(processing_times)) if processing_times else 0.0,
+            "max_processing_time": float(max(processing_times)) if processing_times else 0.0,
+            "average_confidence": float(sum(confidences) / len(confidences)) if confidences else 0.0,
+            "confidence_std": float(math.sqrt(sum((x - sum(confidences)/len(confidences))**2 for x in confidences) / len(confidences))) if len(confidences) > 1 else 0.0,
             "total_predictions": len(prediction_results),
             "successful_predictions": sum(1 for r in prediction_results if r.predictions)
         }
@@ -233,7 +234,7 @@ class JSONExporter(LoggerMixin):
         if isinstance(metrics, DiversityMetrics):
             return asdict(metrics)
         elif isinstance(metrics, dict):
-            return {k: float(v) if isinstance(v, (int, float, np.number)) else v 
+            return {k: float(v) if isinstance(v, (int, float)) else v 
                    for k, v in metrics.items()}
         else:
             return {}
@@ -308,18 +309,22 @@ class JSONExporter(LoggerMixin):
             shannon_values.append(diversity_metrics.get("shannon_diversity", 0))
             richness_values.append(diversity_metrics.get("species_richness", 0))
         
+        import math
+        shannon_mean = sum(shannon_values) / len(shannon_values) if shannon_values else 0.0
+        richness_mean = sum(richness_values) / len(richness_values) if richness_values else 0.0
+        
         return {
             "shannon_diversity": {
-                "mean": float(np.mean(shannon_values)),
-                "std": float(np.std(shannon_values)),
-                "min": float(np.min(shannon_values)),
-                "max": float(np.max(shannon_values))
+                "mean": float(shannon_mean),
+                "std": float(math.sqrt(sum((x - shannon_mean)**2 for x in shannon_values) / len(shannon_values))) if len(shannon_values) > 1 else 0.0,
+                "min": float(min(shannon_values)) if shannon_values else 0.0,
+                "max": float(max(shannon_values)) if shannon_values else 0.0
             },
             "species_richness": {
-                "mean": float(np.mean(richness_values)),
-                "std": float(np.std(richness_values)),
-                "min": float(np.min(richness_values)),
-                "max": float(np.max(richness_values))
+                "mean": float(richness_mean),
+                "std": float(math.sqrt(sum((x - richness_mean)**2 for x in richness_values) / len(richness_values))) if len(richness_values) > 1 else 0.0,
+                "min": float(min(richness_values)) if richness_values else 0.0,
+                "max": float(max(richness_values)) if richness_values else 0.0
             },
             "total_days_analyzed": len(daily_summaries)
         }

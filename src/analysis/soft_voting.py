@@ -1,6 +1,6 @@
 """Soft voting system for Top-3 species predictions."""
 
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from typing import List, Dict, Any, Optional, Tuple
 from collections import defaultdict, Counter
 from dataclasses import dataclass
@@ -273,25 +273,26 @@ class SoftVotingSystem(LoggerMixin):
         if not species_weights:
             return {}
         
-        weights = np.array(list(species_weights.values()))
-        total_weight = np.sum(weights)
+        import math
+        weights = list(species_weights.values())
+        total_weight = sum(weights)
         
         if total_weight == 0:
             return {}
         
-        proportions = weights / total_weight
+        proportions = [w / total_weight for w in weights]
         
         richness = len(species_weights)
         
-        shannon = -np.sum(proportions * np.log(proportions + 1e-10))
+        shannon = -sum(p * math.log(p + 1e-10) for p in proportions if p > 0)
         
         if richness > 1:
-            max_shannon = np.log(richness)
+            max_shannon = math.log(richness)
             pielou = shannon / max_shannon
         else:
             pielou = 1.0
         
-        simpson = 1.0 - np.sum(proportions ** 2)
+        simpson = 1.0 - sum(p ** 2 for p in proportions)
         
         return {
             'species_richness': float(richness),
