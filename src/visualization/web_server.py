@@ -20,9 +20,9 @@ from ..auth.dependencies import require_auth, optional_auth
 from ..database.models import UserModel
 from ..models.model_manager import ModelManager
 from ..utils.config import ConfigManager
-from .calendar_visualizer import CalendarVisualizer
-from .time_series_visualizer import TimeSeriesVisualizer
-from .dashboard_generator import DashboardGenerator
+from .calendar_visualizer_stub import CalendarVisualizer
+from .time_series_visualizer_stub import TimeSeriesVisualizer
+from .dashboard_generator_stub import DashboardGenerator
 
 
 class WebServer(LoggerMixin):
@@ -226,7 +226,7 @@ class WebServer(LoggerMixin):
         @self.app.get("/comparative-analysis", response_class=HTMLResponse)
         async def comparative_analysis():
             try:
-                from ..analysis.comparative_analysis import ComparativeAnalyzer
+                from ..analysis.comparative_analysis_stub import ComparativeAnalyzer
                 analyzer = ComparativeAnalyzer()
                 
                 sample_data = self._generate_sample_daily_summaries()
@@ -241,7 +241,7 @@ class WebServer(LoggerMixin):
         @self.app.get("/functional-diversity", response_class=HTMLResponse)
         async def functional_diversity():
             try:
-                from ..analysis.functional_diversity import FunctionalDiversityAnalyzer
+                from ..analysis.functional_diversity_stub import FunctionalDiversityAnalyzerStub as FunctionalDiversityAnalyzer
                 analyzer = FunctionalDiversityAnalyzer()
                 
                 species_list = ["Taraxacum officinale", "Plantago major", "Trifolium repens", "Poa annua"]
