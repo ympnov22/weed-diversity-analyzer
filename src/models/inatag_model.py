@@ -1,10 +1,6 @@
 """iNatAg Swin Transformer model implementation."""
 
-import torch
-import torch.nn as nn
-from huggingface_hub import hf_hub_download
-import timm
-import numpy as np
+# import numpy as np  # Removed for minimal deployment
 from typing import List, Dict, Any, Optional, Tuple
 from pathlib import Path
 import time
@@ -34,14 +30,15 @@ class iNatAgModel(BaseModel):
         self.model_size = model_size
         self.repo_id = "Project-AgML/iNatAg-models"
         self.num_classes = 2959
-        self.device: Optional[torch.device] = None
-        self.model: Optional[nn.Module] = None
+        self.device: Optional[Any] = None
+        self.model: Optional[Any] = None
         
-    def _get_device(self) -> torch.device:
+    def _get_device(self) -> Any:
         """Get appropriate device for model."""
         if self.device is not None:
             return self.device
-            
+        
+        import torch
         if self.config.device == "auto":
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
@@ -60,6 +57,10 @@ class iNatAgModel(BaseModel):
     def load_model(self) -> bool:
         """Load iNatAg model from Hugging Face Hub."""
         try:
+            import torch
+            import timm
+            from huggingface_hub import hf_hub_download
+            
             model_filename = self._get_model_filename()
             
             self.logger.info(f"Downloading {model_filename} from {self.repo_id}")
@@ -100,6 +101,8 @@ class iNatAgModel(BaseModel):
     def _load_inatag_species_list(self) -> bool:
         """Load iNatAg species list."""
         try:
+            from huggingface_hub import hf_hub_download
+            
             species_filename = "species_list.txt"
             try:
                 species_path = hf_hub_download(
@@ -122,7 +125,7 @@ class iNatAgModel(BaseModel):
             self.logger.error(f"Error loading species list: {e}")
             return False
     
-    def predict(self, image: np.ndarray) -> PredictionResult:
+    def predict(self, image: Any) -> PredictionResult:
         """Predict species from image."""
         if not self.validate_model():
             raise RuntimeError("Model not properly loaded")
@@ -130,9 +133,12 @@ class iNatAgModel(BaseModel):
         start_time = time.time()
         
         try:
+            import torch
+            
             preprocessed = self.preprocess_image(image)
             
             if len(preprocessed.shape) == 3:
+                import numpy as np
                 preprocessed = np.expand_dims(preprocessed, axis=0)
             
             input_tensor = torch.from_numpy(preprocessed).float()
@@ -170,7 +176,7 @@ class iNatAgModel(BaseModel):
                 raw_outputs=None
             )
     
-    def predict_batch(self, images: List[np.ndarray]) -> List[PredictionResult]:
+    def predict_batch(self, images: List[Any]) -> List[PredictionResult]:
         """Predict species for batch of images."""
         if not self.validate_model():
             raise RuntimeError("Model not properly loaded")
@@ -185,16 +191,19 @@ class iNatAgModel(BaseModel):
         
         return results
     
-    def _predict_batch_internal(self, batch: List[np.ndarray]) -> List[PredictionResult]:
+    def _predict_batch_internal(self, batch: List[Any]) -> List[PredictionResult]:
         """Internal batch prediction method."""
         start_time = time.time()
         
         try:
+            import torch
+            
             preprocessed_batch = []
             for image in batch:
                 preprocessed = self.preprocess_image(image)
                 preprocessed_batch.append(preprocessed)
             
+            import numpy as np
             batch_tensor = torch.from_numpy(np.stack(preprocessed_batch)).float()
             batch_tensor = batch_tensor.to(self._get_device())
             
@@ -236,13 +245,14 @@ class iNatAgModel(BaseModel):
                 raw_outputs=None
             ) for _ in batch]
     
-    def preprocess_image(self, image: np.ndarray) -> np.ndarray:
+    def preprocess_image(self, image: Any) -> Any:
         """Preprocess image for Swin Transformer input."""
         if len(image.shape) == 3 and image.shape[2] == 3:
             image_rgb = image[:, :, ::-1]
         else:
             image_rgb = image
         
+        import numpy as np
         if image_rgb.max() > 1.0:
             image_rgb = image_rgb.astype(np.float32) / 255.0
         else:
