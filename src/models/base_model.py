@@ -40,7 +40,7 @@ class PredictionResult:
     processing_time: float
     model_info: Dict[str, Any]
     confidence_scores: List[float]
-    raw_outputs: Optional[np.ndarray[Any, np.dtype[Any]]] = None
+    raw_outputs: Optional[np.ndarray] = None
 
 
 class BaseModel(ABC, LoggerMixin):
@@ -67,7 +67,7 @@ class BaseModel(ABC, LoggerMixin):
         pass
     
     @abstractmethod
-    def predict(self, image: np.ndarray[Any, np.dtype[Any]]) -> PredictionResult:
+    def predict(self, image: np.ndarray) -> PredictionResult:
         """Predict species from image.
         
         Args:
@@ -79,7 +79,7 @@ class BaseModel(ABC, LoggerMixin):
         pass
     
     @abstractmethod
-    def predict_batch(self, images: List[np.ndarray[Any, np.dtype[Any]]]) -> List[PredictionResult]:
+    def predict_batch(self, images: List[np.ndarray]) -> List[PredictionResult]:
         """Predict species for batch of images.
         
         Args:
@@ -90,7 +90,7 @@ class BaseModel(ABC, LoggerMixin):
         """
         pass
     
-    def preprocess_image(self, image: np.ndarray[Any, np.dtype[Any]]) -> np.ndarray[Any, np.dtype[Any]]:
+    def preprocess_image(self, image: np.ndarray) -> np.ndarray:
         """Preprocess image for model input.
         
         Args:
@@ -112,10 +112,9 @@ class BaseModel(ABC, LoggerMixin):
         
         normalized = (image_rgb - mean) / std
         
-        result: np.ndarray[Any, np.dtype[Any]] = normalized.astype(np.float32)
-        return result
+        return normalized.astype(np.float32)
     
-    def postprocess_predictions(self, raw_outputs: np.ndarray[Any, np.dtype[Any]]) -> List[SpeciesPrediction]:
+    def postprocess_predictions(self, raw_outputs: np.ndarray) -> List[SpeciesPrediction]:
         """Convert raw model outputs to species predictions.
         
         Args:
