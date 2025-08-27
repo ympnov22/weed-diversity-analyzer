@@ -49,7 +49,7 @@ def serve(host, port, debug, output_dir):
 def calendar(metric, year, output):
     """Generate GitHub-style calendar visualization."""
     try:
-        from .calendar_visualizer import CalendarVisualizer
+        from .calendar_visualizer_stub import CalendarVisualizer
         
         visualizer = CalendarVisualizer()
         sample_data = visualizer.generate_sample_data(year=year)
@@ -74,7 +74,7 @@ def calendar(metric, year, output):
 def time_series(output):
     """Generate time series visualization."""
     try:
-        from .time_series_visualizer import TimeSeriesVisualizer
+        from .time_series_visualizer_stub import TimeSeriesVisualizer
         
         visualizer = TimeSeriesVisualizer()
         sample_data = visualizer.generate_sample_time_series_data()
@@ -98,7 +98,7 @@ def time_series(output):
 def dashboard(output):
     """Generate species dashboard."""
     try:
-        from .dashboard_generator import DashboardGenerator
+        from .dashboard_generator_stub import DashboardGenerator
         
         generator = DashboardGenerator()
         sample_data = generator.generate_sample_dashboard_data()
@@ -123,7 +123,7 @@ def dashboard(output):
 def generate_comparative_analysis(output: str, data_path: str):
     """Generate comparative analysis dashboard."""
     try:
-        from ..analysis.comparative_analysis import ComparativeAnalyzer
+        from ..analysis.comparative_analysis_stub import ComparativeAnalyzer
         from ..visualization.dashboard_generator import DashboardGenerator
         
         analyzer = ComparativeAnalyzer()
@@ -150,7 +150,7 @@ def generate_comparative_analysis(output: str, data_path: str):
 def generate_functional_diversity(output: str, traits_path: str):
     """Generate functional diversity analysis dashboard."""
     try:
-        from ..analysis.functional_diversity import FunctionalDiversityAnalyzer
+        from ..analysis.functional_diversity_stub import FunctionalDiversityAnalyzerStub as FunctionalDiversityAnalyzer
         from ..visualization.dashboard_generator import DashboardGenerator
         
         analyzer = FunctionalDiversityAnalyzer()
