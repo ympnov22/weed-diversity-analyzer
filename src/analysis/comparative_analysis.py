@@ -385,8 +385,8 @@ class ComparativeAnalyzer(LoggerMixin):
                 'standard_deviations': monthly_stds
             },
             'seasonal_variation_coefficient': float(seasonal_cv),
-            'peak_month': int(max(monthly_means.keys(), key=lambda x: float(monthly_means[x]))),
-            'low_month': int(min(monthly_means.keys(), key=lambda x: float(monthly_means[x]))),
+            'peak_month': int(max(monthly_means.keys(), key=lambda x: monthly_means[x])) if monthly_means else 1,
+            'low_month': int(min(monthly_means.keys(), key=lambda x: monthly_means[x])) if monthly_means else 1,
             'seasonal_amplitude': float(max(monthly_means.values()) - min(monthly_means.values())) if monthly_means else 0.0
         }
     
